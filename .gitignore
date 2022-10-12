@@ -1,0 +1,73 @@
+# IDE Files
+.vs/
+.vscode/
+.idea/
+
+# Project Files
+*.sln
+*.code-workspace
+*.xcodeproj
+*.suo
+*.opensdf
+*.sdf
+*.VC.opendb
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+*.pdb
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.ipa
+
+# Precompiled Assets
+SourceArt/**/*.png
+SourceArt/**/*.tga
+
+# Binary Files
+Plugins/*/Binaries/
+Binaries/
+
+# Builds (Exclude icons)
+Build/
+!Build/**/*.ico
+
+# Editor Configuration files / Screenshots / Debug Profiles
+Plugins/*/Saved/
+Saved/
+
+# Developer Plugins
+Plugins/Developer/*
+
+# Compiled source files for the engine to use
+Plugins/*/Intermediate/
+Intermediate/
+
+# Cache files for the editor to use
+DerivedDataCache/
+
+# Temp Dev Files
+#Content/Temp/
