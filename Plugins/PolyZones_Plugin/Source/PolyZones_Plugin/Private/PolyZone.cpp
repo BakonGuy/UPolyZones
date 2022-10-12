@@ -1,16 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright Seven47 Software All Rights Reserved.
 
+#include "PolyZone.h"
 
-#include "ZonesProject/Public/PolyZone.h"
-
+#include "PolyZones_Math.h"
 #include "Components/BillboardComponent.h"
-#include "ZonesProject/Public/PZ_Math.h"
 
 // Sets default values
 APolyZone::APolyZone()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 
 	// Defaults
 	CellSize = 50.0f;
@@ -66,8 +66,8 @@ void APolyZone::Construct_SetupGrid()
 {
 	FBoxSphereBounds PolyBounds =  PolySpline->Bounds;
 	
-	CellsX = UPZ_Math::PZ_FMod( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
-	CellsY = UPZ_Math::PZ_FMod( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
+	CellsX = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
+	CellsY = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
 
 	double OriginX = PolyBounds.Origin.X - (CellsX * 0.5f * CellSize);
 	double OriginY = PolyBounds.Origin.Y - (CellsY * 0.5f * CellSize);
@@ -78,9 +78,9 @@ void APolyZone::Construct_SetupGrid()
 	{
 		for (int y = 0; y < CellsY-1; ++y)
 		{
-			FPZ_GridCellCoord NewCoord = FPZ_GridCellCoord(x, y);
-			PZ_LOOKUP_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
-			//if(NewCoordFlag != PZ_LOOKUP_CELL_FLAGS::Outside) // Unsaved cells can be considered outside the polygon
+			FPolyZone_GridCell NewCoord = FPolyZone_GridCell(x, y);
+			POLYZONE_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
+			//if(NewCoordFlag != POLYZONE_CELL_FLAGS::Outside) // Unsaved cells can be considered outside the polygon
 			{
 				GridData.Add(NewCoord, NewCoordFlag);
 			}
@@ -122,23 +122,26 @@ bool APolyZone::IsPointWithinPolygon(FVector2D TestPoint)
 	return InsidePoly;
 }
 
-FVector2D APolyZone::GetGridCellWorld(const FPZ_GridCellCoord& Cell)
+FVector2D APolyZone::GetGridCellWorld(const FPolyZone_GridCell& Cell)
 {
 	return GridOrigin_WS + FVector2D(Cell.X * CellSize, Cell.Y * CellSize);
 }
 
-FVector2D APolyZone::GetGridCellCenterWorld(const FPZ_GridCellCoord& Cell)
+FVector2D APolyZone::GetGridCellCenterWorld(const FPolyZone_GridCell& Cell)
 {
 	return GetGridCellWorld(Cell) + FVector2D(CellSize*0.5f, CellSize*0.5f);
 }
 
-PZ_LOOKUP_CELL_FLAGS APolyZone::GetGridCellFlag(const FPZ_GridCellCoord& Cell)
+POLYZONE_CELL_FLAGS APolyZone::GetGridCellFlag(const FPolyZone_GridCell& Cell)
 {
 	return GridData.FindRef(Cell);
 }
 
-PZ_LOOKUP_CELL_FLAGS APolyZone::TestCellAgainstPolygon(FPZ_GridCellCoord Cell)
+POLYZONE_CELL_FLAGS APolyZone::TestCellAgainstPolygon(FPolyZone_GridCell Cell)
 {
+	// Current implementation is an estimate, only tests if each corner is within polygon
+	// If all corners are not the same (Within/Outside the polygon) then it's considered on the edge
+	// TODO: Implement edge intersection testing
 	FVector2D CellCenterLocation_WS = GetGridCellCenterWorld(Cell);
 
 	int Corner = -1;
@@ -169,19 +172,19 @@ PZ_LOOKUP_CELL_FLAGS APolyZone::TestCellAgainstPolygon(FPZ_GridCellCoord Cell)
 
 	if(OnPolyEdge)
 	{
-		return PZ_LOOKUP_CELL_FLAGS::OnEdge;
+		return POLYZONE_CELL_FLAGS::OnEdge;
 	}
 	if(Result)
 	{
-		return PZ_LOOKUP_CELL_FLAGS::Within;
+		return POLYZONE_CELL_FLAGS::Within;
 	}
 
-	return PZ_LOOKUP_CELL_FLAGS::Outside;
+	return POLYZONE_CELL_FLAGS::Outside;
 }
 
-TArray<FPZ_GridCellCoord> APolyZone::GetAllGridCells()
+TArray<FPolyZone_GridCell> APolyZone::GetAllGridCells()
 {
-	TArray<FPZ_GridCellCoord> Coords;
+	TArray<FPolyZone_GridCell> Coords;
 	GridData.GenerateKeyArray(Coords);
 	return Coords;
 }

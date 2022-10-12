@@ -1,11 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright Seven47 Software All Rights Reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PolyZone_Grid.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/Actor.h"
-#include "ZonesProject/Public/FPZ_GridCell.h"
 #include "PolyZone.generated.h"
 
 UCLASS()
@@ -33,16 +33,16 @@ public:
 	bool IsPointWithinPolygon(FVector2D TestPoint);
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
-	TArray<FPZ_GridCellCoord> GetAllGridCells();
+	TArray<FPolyZone_GridCell> GetAllGridCells();
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
-	FVector2D GetGridCellWorld(const FPZ_GridCellCoord& Cell);
+	FVector2D GetGridCellWorld(const FPolyZone_GridCell& Cell);
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
-	FVector2D GetGridCellCenterWorld(const FPZ_GridCellCoord& Cell);
+	FVector2D GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
-	PZ_LOOKUP_CELL_FLAGS GetGridCellFlag(const FPZ_GridCellCoord& Cell);
+	POLYZONE_CELL_FLAGS GetGridCellFlag(const FPolyZone_GridCell& Cell);
 
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override; // Construction Script
@@ -56,19 +56,20 @@ public:
 
 	// Make private later
 
+	// Grid's origin in world space
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
 	FVector2D GridOrigin_WS;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	int CellsX;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	int CellsY;
 
 private:
-	TMap<FPZ_GridCellCoord, PZ_LOOKUP_CELL_FLAGS> GridData;
+	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
 
 	TArray<FVector2D> CornerDirections; // Multipliers to get each corner of a cell
-	PZ_LOOKUP_CELL_FLAGS TestCellAgainstPolygon(FPZ_GridCellCoord Cell);
+	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);
 
 };
