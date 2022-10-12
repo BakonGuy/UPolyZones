@@ -7,10 +7,10 @@ struct FPolyZone_GridCell
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	int32 X;
 
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	int32 Y;
 
 	FPolyZone_GridCell(int32 aX, int32 aY)
@@ -53,5 +53,5 @@ struct FPolyZone_GridCell
 UENUM(BlueprintType)
 enum class POLYZONE_CELL_FLAGS : uint8
 {
-	Within, Outside, OnEdge
+	Outside, Within, OnEdge // Outside is the default because cells outside the grid return the default
 };

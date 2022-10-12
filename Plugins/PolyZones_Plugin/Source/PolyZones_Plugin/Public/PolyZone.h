@@ -28,7 +28,7 @@ public:
 	float CellSize;
 
 	// Poly Zone functions
-
+	
 	UFUNCTION(BlueprintCallable, Category = "Zones")
 	bool IsPointWithinPolygon(FVector2D TestPoint);
 
@@ -42,7 +42,19 @@ public:
 	FVector2D GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
+	FPolyZone_GridCell GetGridCellAtLocation(FVector Location);
+
+	UFUNCTION(BlueprintCallable, Category = "Zones")
+	FPolyZone_GridCell GetGridCellAtLocation2D(FVector2D Location);
+	
+	UFUNCTION(BlueprintCallable, Category = "Zones")
 	POLYZONE_CELL_FLAGS GetGridCellFlag(const FPolyZone_GridCell& Cell);
+
+	UFUNCTION(BlueprintCallable, Category = "Zones")
+	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
+
+	UFUNCTION(BlueprintCallable, Category = "Zones")
+	POLYZONE_CELL_FLAGS GetFlagAtLocation2D(FVector2D Location);
 
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override; // Construction Script

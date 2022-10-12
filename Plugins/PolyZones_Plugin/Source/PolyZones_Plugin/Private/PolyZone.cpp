@@ -80,7 +80,7 @@ void APolyZone::Construct_SetupGrid()
 		{
 			FPolyZone_GridCell NewCoord = FPolyZone_GridCell(x, y);
 			POLYZONE_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
-			//if(NewCoordFlag != POLYZONE_CELL_FLAGS::Outside) // Unsaved cells can be considered outside the polygon
+			if(NewCoordFlag != POLYZONE_CELL_FLAGS::Outside) // Unsaved cells can be considered outside the polygon
 			{
 				GridData.Add(NewCoord, NewCoordFlag);
 			}
@@ -132,9 +132,33 @@ FVector2D APolyZone::GetGridCellCenterWorld(const FPolyZone_GridCell& Cell)
 	return GetGridCellWorld(Cell) + FVector2D(CellSize*0.5f, CellSize*0.5f);
 }
 
+FPolyZone_GridCell APolyZone::GetGridCellAtLocation(FVector Location)
+{
+	FTransform GridOriginTransform = FTransform( FVector(GridOrigin_WS.X, GridOrigin_WS.Y, 0.0f) );
+	FVector LocationLocalToGrid = GridOriginTransform.InverseTransformPosition(Location);
+	int32 GridX = FMath::RoundToInt32(LocationLocalToGrid.X / CellSize);
+	int32 GridY = FMath::RoundToInt32(LocationLocalToGrid.Y / CellSize);
+	return FPolyZone_GridCell(GridX, GridY);
+}
+
+FPolyZone_GridCell APolyZone::GetGridCellAtLocation2D(FVector2D Location)
+{
+	return GetGridCellAtLocation(FVector(Location.X, Location.Y, 0.0f));
+}
+
 POLYZONE_CELL_FLAGS APolyZone::GetGridCellFlag(const FPolyZone_GridCell& Cell)
 {
 	return GridData.FindRef(Cell);
+}
+
+POLYZONE_CELL_FLAGS APolyZone::GetFlagAtLocation(FVector Location)
+{
+	return GetGridCellFlag(GetGridCellAtLocation(Location));
+}
+
+POLYZONE_CELL_FLAGS APolyZone::GetFlagAtLocation2D(FVector2D Location)
+{
+	return GetFlagAtLocation(FVector(Location.X, Location.Y, 0.0f));
 }
 
 POLYZONE_CELL_FLAGS APolyZone::TestCellAgainstPolygon(FPolyZone_GridCell Cell)
