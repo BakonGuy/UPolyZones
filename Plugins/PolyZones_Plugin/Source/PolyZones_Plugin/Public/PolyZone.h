@@ -26,6 +26,9 @@ public:
 	// Configuration Options
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	bool InfiniteHeight;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
 	float ZoneHeight;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
@@ -61,9 +64,6 @@ protected:
 	virtual void OnConstruction(const FTransform& Transform) override; // Construction Script
 	virtual void BeginPlay() override;
 
-	void Construct_Spline();
-	void Construct_SetupGrid();
-
 public:	
 	virtual void Tick(float DeltaTime) override;
 
@@ -83,20 +83,27 @@ public:
 	void PolyZoneConstructed();
 
 private:
+	void Build_PolyZone();
+	void Construct_Polygon();
+	void Construct_SetupGrid();
+	
 	UPROPERTY()
 	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
+
+	UPROPERTY()
+	TArray<FVector> Polygon;
 
 	// Bounds
 	UPROPERTY()
 	FBoxSphereBounds PolyBounds;
 	UPROPERTY()
-	double minX;
+	double Bounds_MinX;
 	UPROPERTY()
-	double maxX;
+	double Bounds_MaxX;
 	UPROPERTY()
-	double minY;
+	double Bounds_MinY;
 	UPROPERTY()
-	double maxY;
+	double Bounds_MaxY;
 
 	TArray<FVector2D> CornerDirections; // Multipliers to get each corner of a cell
 	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);

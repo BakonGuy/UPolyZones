@@ -13,6 +13,7 @@ APolyZone::APolyZone()
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 
 	// Defaults
+	InfiniteHeight = false;
 	ZoneHeight = 2000.0f;
 	CellSize = 50.0f;
 	CellsX = 0;
@@ -35,49 +36,60 @@ APolyZone::APolyZone()
 
 void APolyZone::OnConstruction(const FTransform& Transform)
 {
-	GridData.Empty();
-	if(PolySpline->GetNumberOfSplinePoints() > 2) // Polys have 3 or more edges
-	{
-		Construct_Spline();
-		PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
-		Construct_SetupGrid();
-		PolyZoneConstructed(); // For some reason blueprints construction script has a race condition, so we call our own for now
-	}
+	Build_PolyZone();
+	PolyZoneConstructed(); // For some reason blueprints construction script has a race condition, so we call our own for now
 	Super::OnConstruction(Transform);
 }
 
-// Construction: Make spline flat and ensure all points are linear
-void APolyZone::Construct_Spline()
+// Rebuilds the PolyZone (can be run during runtime)
+void APolyZone::Build_PolyZone()
 {
-	// Set all points Linear and lock Z
+	if(PolySpline->GetNumberOfSplinePoints() > 2) // Polys have 3 or more edges
+	{
+		Construct_Polygon();
+		PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
+		Construct_SetupGrid();
+	}
+}
+
+void APolyZone::Construct_Polygon()
+{
+	Polygon.Empty(); // Can rebuild at runtime
+	
+	// Make spline flat and ensure all points are linear
 	int LastSplineIndex = PolySpline->GetNumberOfSplinePoints() - 1;
-	double PolyActorHeight = GetActorLocation().Z;
+	double ActorHeight = GetActorLocation().Z;
 	for(int i = 0; i <= LastSplineIndex; i++)
 	{
 		PolySpline->SetSplinePointType(i, ESplinePointType::Linear, false);
 		FVector SplinePoint = PolySpline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
-		PolySpline->SetLocationAtSplinePoint(i, FVector(SplinePoint.X,SplinePoint.Y,PolyActorHeight), ESplineCoordinateSpace::World, false);
+		SplinePoint.Z = ActorHeight;
+		PolySpline->SetLocationAtSplinePoint(i, SplinePoint, ESplineCoordinateSpace::World, false);
+		Polygon.Add(SplinePoint);
 	}
 	
 	PolySpline->SetClosedLoop(true, false);
 	PolySpline->bInputSplinePointsToConstructionScript = true;
 
-	minX = PolySpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World).X;
-	maxX = PolySpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World).X;
-	minY = PolySpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World).Y;
-	maxY = PolySpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World).Y;
+	// Save calculated bounds to save cpu cycles in PolyZone test
+	Bounds_MinX = Polygon[0].X;
+	Bounds_MaxX = Polygon[0].X;
+	Bounds_MinY = Polygon[0].Y;
+	Bounds_MaxY = Polygon[0].Y;
 	for ( int i = 1 ; i < LastSplineIndex+1 ; i++ )
 	{
-		FVector q = PolySpline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
-		minX = FMath::Min( q.X, minX );
-		maxX = FMath::Max( q.X, maxX );
-		minY = FMath::Min( q.Y, minY );
-		maxY = FMath::Max( q.Y, maxY );
+		FVector q = Polygon[i];
+		Bounds_MinX = FMath::Min( q.X, Bounds_MinX );
+		Bounds_MaxX = FMath::Max( q.X, Bounds_MaxX );
+		Bounds_MinY = FMath::Min( q.Y, Bounds_MinY );
+		Bounds_MaxY = FMath::Max( q.Y, Bounds_MaxY );
 	}
 }
 
 void APolyZone::Construct_SetupGrid()
 {
+	GridData.Empty(); // Can rebuild at runtime
+	
 	CellsX = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
 	CellsY = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
 
@@ -103,13 +115,13 @@ void APolyZone::Construct_SetupGrid()
 bool APolyZone::IsPointWithinPolyZone(FVector TestPoint)
 {
 	// Height Check
-	if(!FMath::IsWithin(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
+	if(!InfiniteHeight && !FMath::IsWithin(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
 	{
 		return false;
 	}
 
 	// 2D Bounds Check
-	if ( TestPoint.X < minX || TestPoint.X > maxX || TestPoint.Y < minY || TestPoint.Y > maxY )
+	if ( TestPoint.X < Bounds_MinX || TestPoint.X > Bounds_MaxX || TestPoint.Y < Bounds_MinY || TestPoint.Y > Bounds_MaxY )
 	{
 		return false;
 	}
@@ -144,13 +156,13 @@ bool APolyZone::IsPointWithinPolyZone(FVector TestPoint)
 // Original Code: https://wrfranklin.org/Research/Short_Notes/pnpoly.html
 bool APolyZone::IsPointWithinPolygon(FVector2D TestPoint)
 {
-	int NumPoints = PolySpline->GetNumberOfSplinePoints();
+	int NumPoints = Polygon.Num();
 	
 	bool InsidePoly = false;
 	for ( int i = 0, j = NumPoints - 1 ; i < NumPoints ; j = i++ )
 	{
-		FVector Point_i = PolySpline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
-		FVector Point_j = PolySpline->GetLocationAtSplinePoint(j, ESplineCoordinateSpace::World);
+		FVector Point_i = Polygon[i];
+		FVector Point_j = Polygon[j];
 		if ( ( Point_i.Y > TestPoint.Y ) != ( Point_j.Y > TestPoint.Y ) &&
 			 TestPoint.X < ( Point_j.X - Point_i.X ) * ( TestPoint.Y - Point_i.Y ) / ( Point_j.Y - Point_i.Y ) + Point_i.X )
 		{
@@ -246,12 +258,10 @@ TArray<FPolyZone_GridCell> APolyZone::GetAllGridCells()
 void APolyZone::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
 void APolyZone::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
