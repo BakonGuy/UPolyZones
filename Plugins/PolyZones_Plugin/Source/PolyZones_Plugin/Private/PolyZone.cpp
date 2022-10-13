@@ -13,6 +13,7 @@ APolyZone::APolyZone()
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 
 	// Defaults
+	ZoneHeight = 2000.0f;
 	CellSize = 50.0f;
 	CellsX = 0;
 	CellsY = 0;
@@ -34,14 +35,15 @@ APolyZone::APolyZone()
 
 void APolyZone::OnConstruction(const FTransform& Transform)
 {
-	Super::OnConstruction(Transform);
 	GridData.Empty();
 	if(PolySpline->GetNumberOfSplinePoints() > 2) // Polys have 3 or more edges
 	{
 		Construct_Spline();
+		PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
 		Construct_SetupGrid();
 		PolyZoneConstructed(); // For some reason blueprints construction script has a race condition, so we call our own for now
 	}
+	Super::OnConstruction(Transform);
 }
 
 // Construction: Make spline flat and ensure all points are linear
@@ -59,18 +61,29 @@ void APolyZone::Construct_Spline()
 	
 	PolySpline->SetClosedLoop(true, false);
 	PolySpline->bInputSplinePointsToConstructionScript = true;
+
+	minX = PolySpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World).X;
+	maxX = PolySpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World).X;
+	minY = PolySpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World).Y;
+	maxY = PolySpline->GetLocationAtSplinePoint(0, ESplineCoordinateSpace::World).Y;
+	for ( int i = 1 ; i < LastSplineIndex+1 ; i++ )
+	{
+		FVector q = PolySpline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
+		minX = FMath::Min( q.X, minX );
+		maxX = FMath::Max( q.X, maxX );
+		minY = FMath::Min( q.Y, minY );
+		maxY = FMath::Max( q.Y, maxY );
+	}
 }
 
 void APolyZone::Construct_SetupGrid()
 {
-	FBoxSphereBounds PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
-	
 	CellsX = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
 	CellsY = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
 
 	double OriginX = PolyBounds.Origin.X - (CellsX * 0.5f * CellSize);
 	double OriginY = PolyBounds.Origin.Y - (CellsY * 0.5f * CellSize);
-	GridOrigin_WS = FVector2D(OriginX, OriginY);
+	GridOrigin_WS = FVector(OriginX, OriginY, GetActorLocation().Z);
 
 	// Populate grid
 	for (int x = 0; x < CellsX-1; ++x)
@@ -87,6 +100,33 @@ void APolyZone::Construct_SetupGrid()
 	}
 }
 
+bool APolyZone::IsPointWithinPolyZone(FVector TestPoint)
+{
+	// Height Check
+	if(!FMath::IsWithin(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
+	{
+		return false;
+	}
+
+	// 2D Bounds Check
+	if ( TestPoint.X < minX || TestPoint.X > maxX || TestPoint.Y < minY || TestPoint.Y > maxY )
+	{
+		return false;
+	}
+
+	// Grid check
+	POLYZONE_CELL_FLAGS CellFlag = GetFlagAtLocation(TestPoint);
+	if(CellFlag == POLYZONE_CELL_FLAGS::Within)
+	{
+		return true;
+	}
+	if(CellFlag == POLYZONE_CELL_FLAGS::OnEdge)
+	{
+		return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
+	}
+	
+	return false;
+}
 // Copyright (c) 1970-2003, Wm. Randolph Franklin
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
@@ -121,14 +161,14 @@ bool APolyZone::IsPointWithinPolygon(FVector2D TestPoint)
 	return InsidePoly;
 }
 
-FVector2D APolyZone::GetGridCellWorld(const FPolyZone_GridCell& Cell)
+FVector APolyZone::GetGridCellWorld(const FPolyZone_GridCell& Cell)
 {
-	return GridOrigin_WS + FVector2D(Cell.X * CellSize, Cell.Y * CellSize);
+	return GridOrigin_WS + FVector(Cell.X * CellSize, Cell.Y * CellSize, 0.0f);
 }
 
-FVector2D APolyZone::GetGridCellCenterWorld(const FPolyZone_GridCell& Cell)
+FVector APolyZone::GetGridCellCenterWorld(const FPolyZone_GridCell& Cell)
 {
-	return GetGridCellWorld(Cell) + FVector2D(CellSize*0.5f, CellSize*0.5f);
+	return GetGridCellWorld(Cell) + FVector(CellSize*0.5f, CellSize*0.5f, 0.0f);
 }
 
 FPolyZone_GridCell APolyZone::GetGridCellAtLocation(FVector Location)
@@ -138,11 +178,6 @@ FPolyZone_GridCell APolyZone::GetGridCellAtLocation(FVector Location)
 	int32 GridX = FMath::RoundToInt32(LocationLocalToGrid.X / CellSize);
 	int32 GridY = FMath::RoundToInt32(LocationLocalToGrid.Y / CellSize);
 	return FPolyZone_GridCell(GridX, GridY);
-}
-
-FPolyZone_GridCell APolyZone::GetGridCellAtLocation2D(FVector2D Location)
-{
-	return GetGridCellAtLocation(FVector(Location.X, Location.Y, 0.0f));
 }
 
 POLYZONE_CELL_FLAGS APolyZone::GetGridCellFlag(const FPolyZone_GridCell& Cell)
@@ -155,17 +190,12 @@ POLYZONE_CELL_FLAGS APolyZone::GetFlagAtLocation(FVector Location)
 	return GetGridCellFlag(GetGridCellAtLocation(Location));
 }
 
-POLYZONE_CELL_FLAGS APolyZone::GetFlagAtLocation2D(FVector2D Location)
-{
-	return GetFlagAtLocation(FVector(Location.X, Location.Y, 0.0f));
-}
-
 POLYZONE_CELL_FLAGS APolyZone::TestCellAgainstPolygon(FPolyZone_GridCell Cell)
 {
 	// Current implementation is an estimate, only tests if each corner is within polygon
 	// If all corners are not the same (Within/Outside the polygon) then it's considered on the edge
 	// TODO: Implement edge intersection testing
-	FVector2D CellCenterLocation_WS = GetGridCellCenterWorld(Cell);
+	FVector CellCenterLocation_WS = GetGridCellCenterWorld(Cell);
 
 	int Corner = -1;
 	bool Result = false;

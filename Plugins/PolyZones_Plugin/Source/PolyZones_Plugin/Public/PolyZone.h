@@ -24,10 +24,17 @@ public:
 	UBillboardComponent* PolyIcon;
 
 	// Configuration Options
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	float ZoneHeight;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
 	float CellSize;
 
 	// Poly Zone functions
+
+	UFUNCTION(BlueprintCallable, Category = "Zones")
+	bool IsPointWithinPolyZone(FVector TestPoint);
 	
 	UFUNCTION(BlueprintCallable, Category = "Zones")
 	bool IsPointWithinPolygon(FVector2D TestPoint);
@@ -36,25 +43,19 @@ public:
 	TArray<FPolyZone_GridCell> GetAllGridCells();
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
-	FVector2D GetGridCellWorld(const FPolyZone_GridCell& Cell);
+	FVector GetGridCellWorld(const FPolyZone_GridCell& Cell);
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
-	FVector2D GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
+	FVector GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
 	FPolyZone_GridCell GetGridCellAtLocation(FVector Location);
-
-	UFUNCTION(BlueprintCallable, Category = "Zones")
-	FPolyZone_GridCell GetGridCellAtLocation2D(FVector2D Location);
 	
 	UFUNCTION(BlueprintCallable, Category = "Zones")
 	POLYZONE_CELL_FLAGS GetGridCellFlag(const FPolyZone_GridCell& Cell);
 
 	UFUNCTION(BlueprintCallable, Category = "Zones")
 	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
-
-	UFUNCTION(BlueprintCallable, Category = "Zones")
-	POLYZONE_CELL_FLAGS GetFlagAtLocation2D(FVector2D Location);
 
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override; // Construction Script
@@ -70,7 +71,7 @@ public:
 
 	// Grid's origin in world space
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
-	FVector2D GridOrigin_WS;
+	FVector GridOrigin_WS;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	int CellsX;
@@ -82,7 +83,20 @@ public:
 	void PolyZoneConstructed();
 
 private:
+	UPROPERTY()
 	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
+
+	// Bounds
+	UPROPERTY()
+	FBoxSphereBounds PolyBounds;
+	UPROPERTY()
+	double minX;
+	UPROPERTY()
+	double maxX;
+	UPROPERTY()
+	double minY;
+	UPROPERTY()
+	double maxY;
 
 	TArray<FVector2D> CornerDirections; // Multipliers to get each corner of a cell
 	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);
