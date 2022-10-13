@@ -69,7 +69,7 @@ public:
 	// Make private later
 
 	// Grid's origin in world space
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	FVector2D GridOrigin_WS;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
@@ -77,6 +77,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	int CellsY;
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "VehicleSystemPlugin")
+	void PolyZoneConstructed();
 
 private:
 	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;

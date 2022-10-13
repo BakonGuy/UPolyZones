@@ -34,15 +34,14 @@ APolyZone::APolyZone()
 
 void APolyZone::OnConstruction(const FTransform& Transform)
 {
+	Super::OnConstruction(Transform);
 	GridData.Empty();
-	if(PolySpline->GetNumberOfSplinePoints() > 2) // Polys have 3 or more lines
+	if(PolySpline->GetNumberOfSplinePoints() > 2) // Polys have 3 or more edges
 	{
 		Construct_Spline();
 		Construct_SetupGrid();
+		PolyZoneConstructed(); // For some reason blueprints construction script has a race condition, so we call our own for now
 	}
-	Super::OnConstruction(Transform);
-	// Construction always seeming a state behind is probably because the bounds are not computed until after construction
-	// TODO: Compute spline bounds manually
 }
 
 // Construction: Make spline flat and ensure all points are linear
@@ -53,18 +52,18 @@ void APolyZone::Construct_Spline()
 	double PolyActorHeight = GetActorLocation().Z;
 	for(int i = 0; i <= LastSplineIndex; i++)
 	{
-		PolySpline->SetSplinePointType(i, ESplinePointType::Linear);
+		PolySpline->SetSplinePointType(i, ESplinePointType::Linear, false);
 		FVector SplinePoint = PolySpline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
-		PolySpline->SetLocationAtSplinePoint(i, FVector(SplinePoint.X,SplinePoint.Y,PolyActorHeight), ESplineCoordinateSpace::World);
+		PolySpline->SetLocationAtSplinePoint(i, FVector(SplinePoint.X,SplinePoint.Y,PolyActorHeight), ESplineCoordinateSpace::World, false);
 	}
 	
-	PolySpline->SetClosedLoop(true);
+	PolySpline->SetClosedLoop(true, false);
 	PolySpline->bInputSplinePointsToConstructionScript = true;
 }
 
 void APolyZone::Construct_SetupGrid()
 {
-	FBoxSphereBounds PolyBounds =  PolySpline->Bounds;
+	FBoxSphereBounds PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
 	
 	CellsX = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
 	CellsY = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
