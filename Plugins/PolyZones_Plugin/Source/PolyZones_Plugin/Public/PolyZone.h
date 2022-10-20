@@ -20,8 +20,11 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	USplineComponent* PolySpline;
+
+#if WITH_EDITORONLY_DATA
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	UBillboardComponent* PolyIcon;
+#endif
 
 	// Configuration Options
 

@@ -10,7 +10,9 @@ APolyZone::APolyZone()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+#if WITH_EDITOR
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
+#endif
 
 	// Defaults
 	InfiniteHeight = false;
@@ -27,11 +29,13 @@ APolyZone::APolyZone()
 	// Initializations
 	PolySpline = CreateDefaultSubobject<USplineComponent>("PolySpline"); // Root
 	RootComponent = PolySpline; // Set actor root before creating other components
-	
-	PolyIcon = CreateDefaultSubobject<UBillboardComponent>("PolyIcon");
+
+#if WITH_EDITORONLY_DATA
+	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
 	PolyIcon->SetRelativeLocation(FVector(0.0f,0.0f,50.0f));
 	PolyIcon->bUseAttachParentBound = true;
 	PolyIcon->SetupAttachment(RootComponent);
+#endif
 }
 
 void APolyZone::OnConstruction(const FTransform& Transform)
