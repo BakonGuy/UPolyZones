@@ -6,7 +6,7 @@
 #include "GeometryActors/GeneratedDynamicMeshActor.h"
 #include "PolyZone_Visualizer.generated.h"
 
-UCLASS()
+UCLASS(Transient)
 class APolyZone_Visualizer : public AGeneratedDynamicMeshActor
 {
 	GENERATED_BODY()

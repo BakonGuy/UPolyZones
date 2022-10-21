@@ -10,11 +10,7 @@
 // Sets default values
 APolyZone::APolyZone()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-#if WITH_EDITOR
-	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
-#endif
+	PrimaryActorTick.bCanEverTick = true; // Tick
 
 	// Defaults
 	InfiniteHeight = false;
@@ -29,10 +25,15 @@ APolyZone::APolyZone()
 	CornerDirections.Add( FVector2D(-1.0f, 1.0f) ); // BR
 
 	// Initializations
-	PolySpline = CreateDefaultSubobject<USplineComponent>("PolySpline"); // Root
-	RootComponent = PolySpline; // Set actor root before creating other components
+	USceneComponent* SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComp"));
+	SetRootComponent(SceneComponent); // Set actor root before creating other components
+	RootComponent->Mobility = EComponentMobility::Static;
+
+	PolySpline = CreateDefaultSubobject<USplineComponent>("PolySpline");
+	PolySpline->SetupAttachment(RootComponent);
 
 #if WITH_EDITORONLY_DATA // Editor only defaults
+	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 	ShowVisualization = true;
 	
 	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
@@ -44,6 +45,8 @@ APolyZone::APolyZone()
 	PolyZoneVisualizer->SetChildActorClass(APolyZone_Visualizer::StaticClass());
 	//PolyZoneVisualizer->SetupAttachment(RootComponent);
 #endif
+	SetHidden(true);
+	SetCanBeDamaged(false);
 }
 
 void APolyZone::OnConstruction(const FTransform& Transform)

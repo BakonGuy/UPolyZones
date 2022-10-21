@@ -8,7 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "PolyZone.generated.h"
 
-UCLASS()
+UCLASS( hidecategories = (Input), meta = (PrioritizeCategories = "PolyZone") )
 class APolyZone : public AActor
 {
 	GENERATED_BODY()
@@ -18,55 +18,55 @@ public:
 
 	// Default actor components
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
+	UPROPERTY()
 	USplineComponent* PolySpline;
 
 #if WITH_EDITORONLY_DATA // Editor only variables
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	bool ShowVisualization;
 	
-	UPROPERTY(VisibleInstanceOnly, Category = "Zones")
+	UPROPERTY()
 	UBillboardComponent* PolyIcon;
 
-	UPROPERTY(VisibleInstanceOnly, Category = "Zones")
+	UPROPERTY()
 	UChildActorComponent* PolyZoneVisualizer;
 #endif
 
 	// Configuration Options
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	bool InfiniteHeight;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	float ZoneHeight;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	float CellSize;
 
 	// Poly Zone functions
 
-	UFUNCTION(BlueprintCallable, Category = "Zones")
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsPointWithinPolyZone(FVector TestPoint);
 	
-	UFUNCTION(BlueprintCallable, Category = "Zones")
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsPointWithinPolygon(FVector2D TestPoint);
 
-	UFUNCTION(BlueprintCallable, Category = "Zones")
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	TArray<FPolyZone_GridCell> GetAllGridCells();
 
-	UFUNCTION(BlueprintCallable, Category = "Zones")
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	FVector GetGridCellWorld(const FPolyZone_GridCell& Cell);
 
-	UFUNCTION(BlueprintCallable, Category = "Zones")
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	FVector GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
 
-	UFUNCTION(BlueprintCallable, Category = "Zones")
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	FPolyZone_GridCell GetGridCellAtLocation(FVector Location);
 	
-	UFUNCTION(BlueprintCallable, Category = "Zones")
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	POLYZONE_CELL_FLAGS GetGridCellFlag(const FPolyZone_GridCell& Cell);
 
-	UFUNCTION(BlueprintCallable, Category = "Zones")
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
 
 protected:
@@ -79,16 +79,16 @@ public:
 	// Make private later
 
 	// Grid's origin in world space
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
 	FVector GridOrigin_WS;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
 	int CellsX;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
 	int CellsY;
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "VehicleSystemPlugin")
+	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
 	void PolyZoneConstructed();
 
 private:
