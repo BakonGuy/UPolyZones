@@ -21,11 +21,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	USplineComponent* PolySpline;
 
-#if WITH_EDITORONLY_DATA
-	UPROPERTY(VisibleAnywhere, Category = "Zones")
+#if WITH_EDITORONLY_DATA // Editor only variables
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zones")
+	bool ShowVisualization;
+	
+	UPROPERTY(VisibleInstanceOnly, Category = "Zones")
 	UBillboardComponent* PolyIcon;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
+	UPROPERTY(VisibleInstanceOnly, Category = "Zones")
 	UChildActorComponent* PolyZoneVisualizer;
 #endif
 
@@ -92,12 +95,16 @@ private:
 	void Build_PolyZone();
 	void Construct_Polygon();
 	void Construct_SetupGrid();
+	void Construct_Visualizer();
 	
 	UPROPERTY()
 	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
 
 	UPROPERTY()
 	TArray<FVector> Polygon;
+
+	UPROPERTY()
+	TArray<FVector2D> Polygon2D;
 
 	// Bounds
 	UPROPERTY()

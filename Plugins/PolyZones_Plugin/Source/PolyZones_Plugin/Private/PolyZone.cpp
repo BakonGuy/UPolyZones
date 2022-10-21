@@ -32,7 +32,9 @@ APolyZone::APolyZone()
 	PolySpline = CreateDefaultSubobject<USplineComponent>("PolySpline"); // Root
 	RootComponent = PolySpline; // Set actor root before creating other components
 
-#if WITH_EDITORONLY_DATA
+#if WITH_EDITORONLY_DATA // Editor only defaults
+	ShowVisualization = true;
+	
 	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
 	PolyIcon->SetRelativeLocation(FVector(0.0f,0.0f,50.0f));
 	PolyIcon->bUseAttachParentBound = true;
@@ -68,13 +70,14 @@ void APolyZone::Build_PolyZone()
 		Construct_Polygon();
 		PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
 		Construct_SetupGrid();
+		Construct_Visualizer();
 	}
 }
 
 void APolyZone::Construct_Polygon()
 {
 	Polygon.Empty(); // Can rebuild at runtime
-	TArray<FVector2D> Polygon2D;
+	Polygon2D.Empty();
 	
 	// Make spline flat and ensure all points are linear
 	int LastSplineIndex = PolySpline->GetNumberOfSplinePoints() - 1;
@@ -92,15 +95,6 @@ void APolyZone::Construct_Polygon()
 	PolySpline->SetClosedLoop(true, false);
 	PolySpline->bInputSplinePointsToConstructionScript = true;
 	PolySpline->UpdateSpline(); // Call after making all our edits
-
-	PolyZoneVisualizer->CreateChildActor();
-	AActor* VizActor = PolyZoneVisualizer->GetChildActor();
-	APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
-	if(IsValid(Viz))
-	{
-		Viz->PolygonVertices = Polygon2D;
-		Viz->PolyZoneHeight = ZoneHeight;
-	}
 
 	// Save calculated bounds to save cpu cycles in PolyZone test
 	Bounds_MinX = Polygon[0].X;
@@ -141,6 +135,26 @@ void APolyZone::Construct_SetupGrid()
 			}
 		}
 	}
+}
+
+void APolyZone::Construct_Visualizer()
+{
+#if WITH_EDITORONLY_DATA
+	if(ShowVisualization)
+	{
+		if(IsValid(PolyZoneVisualizer))
+		{
+			PolyZoneVisualizer->CreateChildActor();
+			AActor* VizActor = PolyZoneVisualizer->GetChildActor();
+			APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
+			if(IsValid(Viz))
+			{
+				Viz->PolygonVertices = Polygon2D;
+				Viz->PolyZoneHeight = ZoneHeight;
+			}
+		}
+	}
+#endif
 }
 
 bool APolyZone::IsPointWithinPolyZone(FVector TestPoint)
