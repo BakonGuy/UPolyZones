@@ -3,17 +3,20 @@
 #include "PolyZone_Visualizer.h"
 #include "GeometryScript/MeshPrimitiveFunctions.h"
 
-void APolyZone_Visualizer::PostInitializeComponents()
+void APolyZone_Visualizer::PostInitProperties()
 {
-	Super::PostInitializeComponents();
+	Super::PostInitProperties();
 	if(IsValid(DynamicMeshComponent))
 	{
-		static ConstructorHelpers::FObjectFinder<UMaterialInterface> DefaultMaterial(TEXT("/PolyZones_Plugin/PolyZoneDebugMaterial.PolyZoneDebugMaterial'"));
-		if (DefaultMaterial.Succeeded())
+		FSoftObjectPath DefaultMaterialPath(TEXT("Material'/PolyZones_Plugin/PolyZoneDebugMaterial.PolyZoneDebugMaterial'"));
+		UMaterial* DefaultMaterial = Cast<UMaterial>(DefaultMaterialPath.ResolveObject()); // Try getting already loaded material
+		if ( !IsValid(DefaultMaterial) )
 		{
-			UMaterialInstanceDynamic* DynamicMaterial = UMaterialInstanceDynamic::Create(DefaultMaterial.Object, this,FName("M_CreatedInstance"));
-			DynamicMeshComponent->SetMaterial(0, DynamicMaterial);
+			DefaultMaterial = CastChecked<UMaterial>(DefaultMaterialPath.TryLoad()); // If not loaded already, load it
 		}
+		// Create a dynamic version so we can recolor it
+		UMaterialInstanceDynamic* DynamicMaterial = UMaterialInstanceDynamic::Create(DefaultMaterial, this,FName("M_CreatedInstance"));
+		DynamicMeshComponent->SetMaterial(0, DynamicMaterial);
 	}
 }
 

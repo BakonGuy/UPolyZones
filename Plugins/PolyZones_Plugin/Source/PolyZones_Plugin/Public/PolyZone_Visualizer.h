@@ -12,7 +12,7 @@ class APolyZone_Visualizer : public AGeneratedDynamicMeshActor
 	GENERATED_BODY()
 private:
 	/** perform initial setup */
-	virtual void PostInitializeComponents() override;
+	virtual void PostInitProperties () override;
 
 protected:
 	virtual void ExecuteRebuildGeneratedMeshIfPending() override;

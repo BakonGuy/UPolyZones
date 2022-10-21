@@ -25,7 +25,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Zones")
 	UBillboardComponent* PolyIcon;
 
-	UPROPERTY(VisibleAnywhere, Category = "Zones")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
 	UChildActorComponent* PolyZoneVisualizer;
 #endif
 
