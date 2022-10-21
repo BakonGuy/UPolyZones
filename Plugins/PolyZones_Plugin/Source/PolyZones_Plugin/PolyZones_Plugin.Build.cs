@@ -8,7 +8,7 @@ public class PolyZones_Plugin : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "GeometryScriptingEditor", "GeometryScriptingCore" });
 		PrivateDependencyModuleNames.AddRange(new string[] { "Projects", "CoreUObject", "Engine", "Slate", "SlateCore" });
 	}
 }

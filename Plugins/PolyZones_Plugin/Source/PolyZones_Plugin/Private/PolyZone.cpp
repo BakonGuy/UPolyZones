@@ -3,7 +3,9 @@
 #include "PolyZone.h"
 
 #include "PolyZones_Math.h"
+#include "PolyZone_Visualizer.h"
 #include "Components/BillboardComponent.h"
+#include "GeometryFramework/Public/Components/DynamicMeshComponent.h"
 
 // Sets default values
 APolyZone::APolyZone()
@@ -16,7 +18,7 @@ APolyZone::APolyZone()
 
 	// Defaults
 	InfiniteHeight = false;
-	ZoneHeight = 2000.0f;
+	ZoneHeight = 500.0f;
 	CellSize = 50.0f;
 	CellsX = 0;
 	CellsY = 0;
@@ -35,6 +37,10 @@ APolyZone::APolyZone()
 	PolyIcon->SetRelativeLocation(FVector(0.0f,0.0f,50.0f));
 	PolyIcon->bUseAttachParentBound = true;
 	PolyIcon->SetupAttachment(RootComponent);
+
+	PolyZoneVisualizer = CreateEditorOnlyDefaultSubobject<UChildActorComponent>("PolyZoneVisualizer");
+	PolyZoneVisualizer->SetChildActorClass(APolyZone_Visualizer::StaticClass());
+	//PolyZoneVisualizer->SetupAttachment(RootComponent);
 #endif
 }
 
@@ -68,6 +74,7 @@ void APolyZone::Build_PolyZone()
 void APolyZone::Construct_Polygon()
 {
 	Polygon.Empty(); // Can rebuild at runtime
+	TArray<FVector2D> Polygon2D;
 	
 	// Make spline flat and ensure all points are linear
 	int LastSplineIndex = PolySpline->GetNumberOfSplinePoints() - 1;
@@ -79,11 +86,21 @@ void APolyZone::Construct_Polygon()
 		SplinePoint.Z = ActorHeight;
 		PolySpline->SetLocationAtSplinePoint(i, SplinePoint, ESplineCoordinateSpace::World, false);
 		Polygon.Add(SplinePoint);
+		Polygon2D.Add(FVector2D(SplinePoint.X, SplinePoint.Y));
 	}
 	
 	PolySpline->SetClosedLoop(true, false);
 	PolySpline->bInputSplinePointsToConstructionScript = true;
 	PolySpline->UpdateSpline(); // Call after making all our edits
+
+	PolyZoneVisualizer->CreateChildActor();
+	AActor* VizActor = PolyZoneVisualizer->GetChildActor();
+	APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
+	if(IsValid(Viz))
+	{
+		Viz->PolygonVertices = Polygon2D;
+		Viz->PolyZoneHeight = ZoneHeight;
+	}
 
 	// Save calculated bounds to save cpu cycles in PolyZone test
 	Bounds_MinX = Polygon[0].X;

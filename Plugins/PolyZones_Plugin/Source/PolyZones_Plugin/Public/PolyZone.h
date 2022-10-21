@@ -22,8 +22,11 @@ public:
 	USplineComponent* PolySpline;
 
 #if WITH_EDITORONLY_DATA
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zones")
+	UPROPERTY(VisibleAnywhere, Category = "Zones")
 	UBillboardComponent* PolyIcon;
+
+	UPROPERTY(VisibleAnywhere, Category = "Zones")
+	UChildActorComponent* PolyZoneVisualizer;
 #endif
 
 	// Configuration Options
