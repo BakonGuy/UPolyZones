@@ -48,7 +48,16 @@ void APolyZone::OnConstruction(const FTransform& Transform)
 // Rebuilds the PolyZone (can be run during runtime)
 void APolyZone::Build_PolyZone()
 {
-	if(PolySpline->GetNumberOfSplinePoints() > 2) // Polys have 3 or more edges
+	if(PolySpline->GetNumberOfSplinePoints() < 3) // A polygon must have at least 3 points to be valid
+	{
+		// Create a default polygon
+		TArray<FVector> DefaultPoints;
+		DefaultPoints.Add(FVector(0, 0, 0));
+		DefaultPoints.Add(FVector(100, -50, 0));
+		DefaultPoints.Add(FVector(100, 50, 0));
+		PolySpline->SetSplinePoints(DefaultPoints, ESplineCoordinateSpace::Local, true);
+	}
+	if(PolySpline->GetNumberOfSplinePoints() >= 3) // We check again because sometimes the default is overridden
 	{
 		Construct_Polygon();
 		PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
@@ -74,6 +83,7 @@ void APolyZone::Construct_Polygon()
 	
 	PolySpline->SetClosedLoop(true, false);
 	PolySpline->bInputSplinePointsToConstructionScript = true;
+	PolySpline->UpdateSpline(); // Call after making all our edits
 
 	// Save calculated bounds to save cpu cycles in PolyZone test
 	Bounds_MinX = Polygon[0].X;
