@@ -3,9 +3,31 @@
 #include "PolyZone_Visualizer.h"
 #include "GeometryScript/MeshPrimitiveFunctions.h"
 
+APolyZone_Visualizer::APolyZone_Visualizer()
+{
+	bListedInSceneOutliner = false; // Hide from outliner
+	PrimaryActorTick.bCanEverTick = false; // Tick
+
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshPath(TEXT("StaticMesh'/Game/PolyZones_Demo/LevelPrototyping/Meshes/SM_ChamferCube.SM_ChamferCube'"));
+	UStaticMeshComponent* Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SceneComp"));
+	SetRootComponent(Mesh);
+	Mesh->SetStaticMesh(MeshPath.Object);
+}
+
 void APolyZone_Visualizer::PostInitProperties()
 {
 	Super::PostInitProperties();
+	SetupDynamicMaterial();
+}
+
+void APolyZone_Visualizer::BeginPlay()
+{
+	Super::BeginPlay();
+	SetupDynamicMaterial(); // Sanity check
+}
+
+void APolyZone_Visualizer::SetupDynamicMaterial()
+{
 	if(IsValid(DynamicMeshComponent))
 	{
 		FSoftObjectPath DefaultMaterialPath(TEXT("Material'/PolyZones_Plugin/PolyZoneDebugMaterial.PolyZoneDebugMaterial'"));
@@ -15,10 +37,12 @@ void APolyZone_Visualizer::PostInitProperties()
 			DefaultMaterial = CastChecked<UMaterial>(DefaultMaterialPath.TryLoad()); // If not loaded already, load it
 		}
 		// Create a dynamic version so we can recolor it
-		UMaterialInstanceDynamic* DynamicMaterial = UMaterialInstanceDynamic::Create(DefaultMaterial, this,FName("M_CreatedInstance"));
+		DynamicMaterial = UMaterialInstanceDynamic::Create(DefaultMaterial, this,FName("M_CreatedInstance"));
 		DynamicMeshComponent->SetMaterial(0, DynamicMaterial);
 	}
 }
+
+// MESH FUNCTIONS
 
 void APolyZone_Visualizer::ExecuteRebuildGeneratedMeshIfPending()
 {

@@ -35,17 +35,21 @@ APolyZone::APolyZone()
 #if WITH_EDITORONLY_DATA // Editor only defaults
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 	ShowVisualization = true;
-	
-	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
-	PolyIcon->SetRelativeLocation(FVector(0.0f,0.0f,50.0f));
-	PolyIcon->bUseAttachParentBound = true;
-	PolyIcon->SetupAttachment(RootComponent);
 
-	PolyZoneVisualizer = CreateEditorOnlyDefaultSubobject<UChildActorComponent>("PolyZoneVisualizer");
-	PolyZoneVisualizer->SetChildActorClass(APolyZone_Visualizer::StaticClass());
-	//PolyZoneVisualizer->SetupAttachment(RootComponent);
+	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
+	if(PolyIcon)
+	{
+		PolyIcon->SetRelativeLocation(FVector(0.0f,0.0f,50.0f));
+		PolyIcon->bUseAttachParentBound = true;
+		PolyIcon->SetupAttachment(RootComponent);
+	}
+	PolyZoneVisualizer = CreateDefaultSubobject<UChildActorComponent>("PolyZoneVisualizer", true); // EditorSubObject hides the component in game view
+	if(PolyZoneVisualizer)
+	{
+		PolyZoneVisualizer->SetChildActorClass(APolyZone_Visualizer::StaticClass());
+		PolyZoneVisualizer->SetupAttachment(RootComponent); // TODO: Save and apply Polygon in local space so this can be attached
+	}
 #endif
-	SetHidden(true);
 	SetCanBeDamaged(false);
 }
 
@@ -306,6 +310,7 @@ TArray<FPolyZone_GridCell> APolyZone::GetAllGridCells()
 void APolyZone::BeginPlay()
 {
 	Super::BeginPlay();
+	Construct_Visualizer();
 }
 
 // Called every frame
