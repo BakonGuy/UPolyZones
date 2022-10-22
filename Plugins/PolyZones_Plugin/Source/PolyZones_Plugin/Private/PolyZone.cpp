@@ -5,6 +5,7 @@
 #include "PolyZones_Math.h"
 #include "PolyZone_Visualizer.h"
 #include "Components/BillboardComponent.h"
+#include "Components/BoxComponent.h"
 #include "GeometryFramework/Public/Components/DynamicMeshComponent.h"
 
 // Sets default values
@@ -60,6 +61,12 @@ void APolyZone::OnConstruction(const FTransform& Transform)
 	Super::OnConstruction(Transform);
 }
 
+void APolyZone::OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+	bool bFromSweep, const FHitResult& SweepResult)
+{
+	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString(TEXT("Overlap PolyZone Bounds") ) );
+}
+
 // Rebuilds the PolyZone (can be run during runtime)
 void APolyZone::Build_PolyZone()
 {
@@ -75,7 +82,7 @@ void APolyZone::Build_PolyZone()
 	if(PolySpline->GetNumberOfSplinePoints() >= 3) // We check again because sometimes the default is overridden
 	{
 		Construct_Polygon();
-		PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
+		Construct_Bounds();
 		Construct_SetupGrid();
 		Construct_Visualizer();
 	}
@@ -98,7 +105,8 @@ void APolyZone::Construct_Polygon()
 		Polygon.Add(SplinePoint);
 		Polygon2D.Add(FVector2D(SplinePoint.X, SplinePoint.Y));
 	}
-	
+
+	PolySpline->SetUnselectedSplineSegmentColor(FLinearColor(0, 1, 0)); // Make spline green
 	PolySpline->SetClosedLoop(true, false);
 	PolySpline->bInputSplinePointsToConstructionScript = true;
 	PolySpline->UpdateSpline(); // Call after making all our edits
@@ -116,6 +124,38 @@ void APolyZone::Construct_Polygon()
 		Bounds_MinY = FMath::Min( q.Y, Bounds_MinY );
 		Bounds_MaxY = FMath::Max( q.Y, Bounds_MaxY );
 	}
+}
+
+void APolyZone::Construct_Bounds()
+{
+	// TODO: Calculate smallest rectangular bounds for overlap
+	PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
+	UBoxComponent* NewBoundsOverlap = NewObject<UBoxComponent>(this);
+	if(NewBoundsOverlap)
+	{
+		// Create
+		FVector OverlapExtent = FVector(PolyBounds.BoxExtent.X, PolyBounds.BoxExtent.Y, ZoneHeight*0.5f);
+		NewBoundsOverlap->RegisterComponent();
+		NewBoundsOverlap->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+		NewBoundsOverlap->SetHiddenInGame(false);
+
+		// Setup Visualization
+		NewBoundsOverlap->ShapeColor = FColor(0, 255, 0);
+
+		// Setup Shape
+		NewBoundsOverlap->SetBoxExtent(OverlapExtent);
+		NewBoundsOverlap->SetWorldLocation(PolyBounds.Origin + FVector(0,0,ZoneHeight*0.5f));
+
+		// Setup Collision
+		NewBoundsOverlap->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		NewBoundsOverlap->SetCollisionObjectType(ZoneObjectType);
+		NewBoundsOverlap->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		for(ECollisionChannel ToOverlap : OverlapTypes)
+		{
+			NewBoundsOverlap->SetCollisionResponseToChannel(ToOverlap, ECollisionResponse::ECR_Overlap);
+		}
+	}
+	BoundsOverlap = NewBoundsOverlap;
 }
 
 void APolyZone::Construct_SetupGrid()
@@ -151,7 +191,7 @@ void APolyZone::Construct_Visualizer()
 	{
 		if(IsValid(PolyZoneVisualizer))
 		{
-			PolyZoneVisualizer->SetWorldTransform(FTransform()); // Move to world origin
+			PolyZoneVisualizer->SetWorldTransform(FTransform(FVector(0,0,GetActorLocation().Z))); // Move XY to world origin
 			PolyZoneVisualizer->CreateChildActor();
 			AActor* VizActor = PolyZoneVisualizer->GetChildActor();
 			APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
@@ -311,7 +351,12 @@ TArray<FPolyZone_GridCell> APolyZone::GetAllGridCells()
 void APolyZone::BeginPlay()
 {
 	Super::BeginPlay();
+	Construct_Bounds();
 	Construct_Visualizer();
+	if( IsValid(BoundsOverlap) )
+	{
+		BoundsOverlap->OnComponentBeginOverlap.AddDynamic(this, &APolyZone::OnBeginBoundsOverlap); // Bind Overlap Event
+	}
 }
 
 // Called every frame

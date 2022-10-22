@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "PolyZone_Grid.h"
+#include "Components/ShapeComponent.h"
 #include "Components/SplineComponent.h"
 #include "GameFramework/Actor.h"
 #include "PolyZone.generated.h"
@@ -20,6 +21,15 @@ public:
 	
 	UPROPERTY()
 	USplineComponent* PolySpline;
+
+	UPROPERTY(Transient)
+	UShapeComponent* BoundsOverlap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
+	TEnumAsByte<ECollisionChannel> ZoneObjectType;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
+	TArray<TEnumAsByte<ECollisionChannel>> OverlapTypes;
 
 #if WITH_EDITORONLY_DATA // Editor only variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
@@ -91,9 +101,13 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
 	void PolyZoneConstructed();
 
+	UFUNCTION()
+	void OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
 private:
 	void Build_PolyZone();
 	void Construct_Polygon();
+	void Construct_Bounds();
 	void Construct_SetupGrid();
 	void Construct_Visualizer();
 	
