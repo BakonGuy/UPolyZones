@@ -7,11 +7,6 @@ APolyZone_Visualizer::APolyZone_Visualizer()
 {
 	bListedInSceneOutliner = false; // Hide from outliner
 	PrimaryActorTick.bCanEverTick = false; // Tick
-
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> MeshPath(TEXT("StaticMesh'/Game/PolyZones_Demo/LevelPrototyping/Meshes/SM_ChamferCube.SM_ChamferCube'"));
-	UStaticMeshComponent* Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SceneComp"));
-	SetRootComponent(Mesh);
-	Mesh->SetStaticMesh(MeshPath.Object);
 }
 
 void APolyZone_Visualizer::PostInitProperties()

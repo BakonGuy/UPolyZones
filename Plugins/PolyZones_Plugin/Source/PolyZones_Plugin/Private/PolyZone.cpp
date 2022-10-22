@@ -151,6 +151,7 @@ void APolyZone::Construct_Visualizer()
 	{
 		if(IsValid(PolyZoneVisualizer))
 		{
+			PolyZoneVisualizer->SetWorldTransform(FTransform()); // Move to world origin
 			PolyZoneVisualizer->CreateChildActor();
 			AActor* VizActor = PolyZoneVisualizer->GetChildActor();
 			APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
