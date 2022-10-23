@@ -387,6 +387,7 @@ void APolyZone::OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor
 	if( OtherActor->Implements<UPolyZone_Interface>() )
 	{
 		TrackedActors.AddUnique(OtherActor);
+		TrackedActorsOverlap.Add(false); // Try to keep the arrays in sync
 	}
 }
 
@@ -394,7 +395,13 @@ void APolyZone::OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 {
 	if( OtherActor->Implements<UPolyZone_Interface>() )
 	{
+		int ActorIndex = TrackedActors.Find(OtherActor);
+		if( TrackedActorsOverlap.IsValidIndex(ActorIndex) && TrackedActorsOverlap[ActorIndex] ) // Is within polygon?
+		{
+			NotifyActorOfOverlapChange(OtherActor, false); // Notify that we left via bounds (likely height)
+		}
 		TrackedActors.Remove(OtherActor);
+		TrackedActorsOverlap.RemoveAt(ActorIndex);
 	}
 }
 
