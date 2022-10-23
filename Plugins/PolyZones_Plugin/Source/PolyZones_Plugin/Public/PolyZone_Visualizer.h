@@ -14,9 +14,6 @@ class APolyZone_Visualizer : public AGeneratedDynamicMeshActor
 public:
 	APolyZone_Visualizer(); // Constructor
 
-private:
-	virtual void PostInitProperties() override; // Runs in editor and game, after variables initialized
-
 protected:
 	virtual void ExecuteRebuildGeneratedMeshIfPending() override;
 	virtual void BeginPlay() override;
@@ -33,5 +30,8 @@ public:
 
 	UPROPERTY()
 	float PolyZoneHeight = 500.0f;
+
+	UPROPERTY()
+	FColor PolyColor;
 	
 };

@@ -3,6 +3,8 @@
 #include "PolyZone.h"
 
 #include "PolyZones_Math.h"
+#include "PolyZone_BoundsComponent.h"
+#include "PolyZone_Interface.h"
 #include "PolyZone_Visualizer.h"
 #include "Components/BillboardComponent.h"
 #include "Components/BoxComponent.h"
@@ -14,6 +16,11 @@ APolyZone::APolyZone()
 	PrimaryActorTick.bCanEverTick = true; // Tick
 
 	// Defaults
+	ZoneColor = FColor(0, 255, 0, 255);
+	
+	ZoneObjectType = ECollisionChannel::ECC_WorldDynamic;
+	OverlapTypes.Add(ECollisionChannel::ECC_Pawn);
+	
 	InfiniteHeight = false;
 	ZoneHeight = 500.0f;
 	CellSize = 50.0f;
@@ -59,12 +66,6 @@ void APolyZone::OnConstruction(const FTransform& Transform)
 	Build_PolyZone();
 	PolyZoneConstructed(); // For some reason blueprints construction script has a race condition, so we call our own for now
 	Super::OnConstruction(Transform);
-}
-
-void APolyZone::OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-	bool bFromSweep, const FHitResult& SweepResult)
-{
-	GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, FString(TEXT("Overlap PolyZone Bounds") ) );
 }
 
 // Rebuilds the PolyZone (can be run during runtime)
@@ -130,17 +131,20 @@ void APolyZone::Construct_Bounds()
 {
 	// TODO: Calculate smallest rectangular bounds for overlap
 	PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
-	UBoxComponent* NewBoundsOverlap = NewObject<UBoxComponent>(this);
+	UBoxComponent* NewBoundsOverlap = NewObject<UPolyZone_BoundsComponent>(this);
 	if(NewBoundsOverlap)
 	{
 		// Create
 		FVector OverlapExtent = FVector(PolyBounds.BoxExtent.X, PolyBounds.BoxExtent.Y, ZoneHeight*0.5f);
 		NewBoundsOverlap->RegisterComponent();
 		NewBoundsOverlap->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
-		NewBoundsOverlap->SetHiddenInGame(false);
 
+#if WITH_EDITORONLY_DATA
 		// Setup Visualization
 		NewBoundsOverlap->ShapeColor = FColor(0, 255, 0);
+		NewBoundsOverlap->SetVisibility( ShowVisualization );
+		NewBoundsOverlap->SetHiddenInGame( false );
+#endif
 
 		// Setup Shape
 		NewBoundsOverlap->SetBoxExtent(OverlapExtent);
@@ -199,6 +203,7 @@ void APolyZone::Construct_Visualizer()
 			{
 				Viz->PolygonVertices = Polygon2D;
 				Viz->PolyZoneHeight = ZoneHeight;
+				Viz->PolyColor = ZoneColor;
 			}
 		}
 	}
@@ -208,7 +213,7 @@ void APolyZone::Construct_Visualizer()
 bool APolyZone::IsPointWithinPolyZone(FVector TestPoint)
 {
 	// Height Check
-	if(!InfiniteHeight && !FMath::IsWithin(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
+	if(!InfiniteHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
 	{
 		return false;
 	}
@@ -232,6 +237,20 @@ bool APolyZone::IsPointWithinPolyZone(FVector TestPoint)
 	
 	return false;
 }
+
+bool APolyZone::IsTrackedActorWithinPolyZone(AActor* TrackedActor)
+{
+	FVector TestPoint = TrackedActor->GetActorLocation();
+	
+	// Height Check
+	if(!InfiniteHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
+	{
+		return false;
+	}
+
+	return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
+}
+
 // Copyright (c) 1970-2003, Wm. Randolph Franklin
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
@@ -355,7 +374,26 @@ void APolyZone::BeginPlay()
 	Construct_Visualizer();
 	if( IsValid(BoundsOverlap) )
 	{
-		BoundsOverlap->OnComponentBeginOverlap.AddDynamic(this, &APolyZone::OnBeginBoundsOverlap); // Bind Overlap Event
+		// Bind Overlap Events
+		BoundsOverlap->OnComponentBeginOverlap.AddDynamic(this, &APolyZone::OnBeginBoundsOverlap);
+		BoundsOverlap->OnComponentEndOverlap.AddDynamic(this, &APolyZone::OnEndBoundsOverlap);
+	}
+}
+
+void APolyZone::OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+	bool bFromSweep, const FHitResult& SweepResult)
+{
+	if( OtherActor->Implements<UPolyZone_Interface>() )
+	{
+		TrackedActors.AddUnique(OtherActor);
+	}
+}
+
+void APolyZone::OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if( OtherActor->Implements<UPolyZone_Interface>() )
+	{
+		TrackedActors.Remove(OtherActor);
 	}
 }
 
@@ -363,4 +401,44 @@ void APolyZone::BeginPlay()
 void APolyZone::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	int LastIndex = TrackedActors.Num()-1;
+	for (int Index = 0; Index <= LastIndex; ++Index)
+	{
+		if( IsValid(TrackedActors[Index]) )
+		{
+			if (TrackedActorsOverlap.Num() - 1 < Index)
+			{
+				// Grow array for new items
+				TrackedActorsOverlap.SetNum(Index+1);
+			}
+
+			bool OldIsWithinPoly = TrackedActorsOverlap[Index];
+			bool NewIsWithinPoly = IsTrackedActorWithinPolyZone( TrackedActors[Index] );
+
+			if(NewIsWithinPoly != OldIsWithinPoly)
+			{
+				TrackedActorsOverlap[Index] = NewIsWithinPoly;
+				NotifyActorOfOverlapChange(TrackedActors[Index], NewIsWithinPoly);
+			}
+		}
+		else
+		{
+			TrackedActors.RemoveAt(Index); // Remove invalid entries
+			TrackedActorsOverlap.RemoveAt(Index);
+		}
+	}
+}
+
+void APolyZone::NotifyActorOfOverlapChange(AActor* TrackedActor, bool NewIsOverlapped)
+{
+	IPolyZone_Interface* ZoneInterface = Cast<IPolyZone_Interface>(TrackedActor);
+	if( NewIsOverlapped )
+	{
+		ZoneInterface->Execute_EnterPolyZone(TrackedActor, this);
+	}
+	else
+	{
+		ZoneInterface->Execute_LeavePolyZone(TrackedActor, this);
+	}
 }

@@ -4,13 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "PolyZone_Grid.h"
+#include "ZoneActor.h"
 #include "Components/ShapeComponent.h"
 #include "Components/SplineComponent.h"
-#include "GameFramework/Actor.h"
 #include "PolyZone.generated.h"
 
 UCLASS( hidecategories = (Input), meta = (PrioritizeCategories = "PolyZone") )
-class APolyZone : public AActor
+class APolyZone : public AZoneActor
 {
 	GENERATED_BODY()
 	
@@ -24,6 +24,9 @@ public:
 
 	UPROPERTY(Transient)
 	UShapeComponent* BoundsOverlap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
+	FColor ZoneColor;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	TEnumAsByte<ECollisionChannel> ZoneObjectType;
@@ -57,6 +60,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsPointWithinPolyZone(FVector TestPoint);
+
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
+	bool IsTrackedActorWithinPolyZone(AActor* TrackedActor);
 	
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsPointWithinPolygon(FVector2D TestPoint);
@@ -101,8 +107,13 @@ public:
 	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
 	void PolyZoneConstructed();
 
+	// Bounds Overlaps
+	
 	UFUNCTION()
 	void OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
 	void Build_PolyZone();
@@ -134,5 +145,13 @@ private:
 
 	TArray<FVector2D> CornerDirections; // Multipliers to get each corner of a cell
 	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);
+
+	// Actor Tracking
+	UPROPERTY()
+	TArray<AActor*> TrackedActors;
+
+	TArray<bool> TrackedActorsOverlap;
+
+	void NotifyActorOfOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
 
 };

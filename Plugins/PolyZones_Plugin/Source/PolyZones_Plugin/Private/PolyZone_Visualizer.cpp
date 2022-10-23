@@ -7,12 +7,8 @@ APolyZone_Visualizer::APolyZone_Visualizer()
 {
 	bListedInSceneOutliner = false; // Hide from outliner
 	PrimaryActorTick.bCanEverTick = false; // Tick
-}
 
-void APolyZone_Visualizer::PostInitProperties()
-{
-	Super::PostInitProperties();
-	SetupDynamicMaterial();
+	PolyColor = FColor(0, 255, 0, 255);
 }
 
 void APolyZone_Visualizer::BeginPlay()
@@ -33,6 +29,7 @@ void APolyZone_Visualizer::SetupDynamicMaterial()
 		}
 		// Create a dynamic version so we can recolor it
 		DynamicMaterial = UMaterialInstanceDynamic::Create(DefaultMaterial, this,FName("M_CreatedInstance"));
+		DynamicMaterial->SetVectorParameterValue( FName( TEXT("Color") ), FLinearColor(PolyColor) );
 		DynamicMeshComponent->SetMaterial(0, DynamicMaterial);
 	}
 }
@@ -64,6 +61,8 @@ void APolyZone_Visualizer::RebuildMesh(UDynamicMesh* TargetMesh)
 		FTransform Transform;
 
 		UGeometryScriptLibrary_MeshPrimitiveFunctions::AppendSimpleExtrudePolygon(TargetMesh, PrimitiveOptions, Transform, PolygonVertices, PolyZoneHeight, 0, false);
+
+		SetupDynamicMaterial();
 	}
 }
 
