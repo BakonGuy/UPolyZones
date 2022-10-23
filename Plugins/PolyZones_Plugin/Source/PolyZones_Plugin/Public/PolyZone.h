@@ -45,9 +45,6 @@ public:
 #endif
 
 	// Configuration Options
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
-	bool InfiniteHeight;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	float ZoneHeight;
@@ -58,7 +55,7 @@ public:
 	// Poly Zone functions
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
-	bool IsPointWithinPolyZone(FVector TestPoint);
+	bool IsPointWithinPolyZone(FVector TestPoint, bool InfiniteHeight);
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsTrackedActorWithinPolyZone(AActor* TrackedActor);
@@ -147,9 +144,7 @@ private:
 
 	// Actor Tracking
 	UPROPERTY()
-	TArray<AActor*> TrackedActors;
-
-	TArray<bool> TrackedActorsOverlap;
+	TMap<AActor*, bool> TrackedActors;
 
 	void NotifyActorOfOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
 

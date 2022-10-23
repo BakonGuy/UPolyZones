@@ -21,7 +21,6 @@ APolyZone::APolyZone()
 	ZoneObjectType = ECollisionChannel::ECC_WorldDynamic;
 	OverlapTypes.Add(ECollisionChannel::ECC_Pawn);
 	
-	InfiniteHeight = false;
 	ZoneHeight = 500.0f;
 	CellSize = 50.0f;
 	CellsX = 0;
@@ -211,7 +210,7 @@ void APolyZone::Construct_Visualizer()
 #endif
 }
 
-bool APolyZone::IsPointWithinPolyZone(FVector TestPoint)
+bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool InfiniteHeight)
 {
 	// Height Check
 	if(!InfiniteHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
@@ -244,7 +243,7 @@ bool APolyZone::IsTrackedActorWithinPolyZone(AActor* TrackedActor)
 	FVector TestPoint = TrackedActor->GetActorLocation();
 	
 	// Height Check
-	if(!InfiniteHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
+	if( !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
 	{
 		return false;
 	}
@@ -387,8 +386,7 @@ void APolyZone::BeginPlay()
 		{
 			if( StartingOverlaps[Index]->Implements<UPolyZone_Interface>() )
 			{
-				TrackedActors.Add(StartingOverlaps[Index]);
-				TrackedActorsOverlap.Add(false);
+				TrackedActors.Add(StartingOverlaps[Index], false);
 			}
 		}
 	}
@@ -399,8 +397,7 @@ void APolyZone::OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor
 {
 	if( OtherActor->Implements<UPolyZone_Interface>() )
 	{
-		TrackedActors.AddUnique(OtherActor);
-		TrackedActorsOverlap.Add(false); // Try to keep the arrays in sync
+		TrackedActors.Add(OtherActor, false);
 	}
 }
 
@@ -408,13 +405,11 @@ void APolyZone::OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 {
 	if( OtherActor->Implements<UPolyZone_Interface>() )
 	{
-		int ActorIndex = TrackedActors.Find(OtherActor);
-		if( TrackedActorsOverlap.IsValidIndex(ActorIndex) && TrackedActorsOverlap[ActorIndex] ) // Is within polygon?
+		if( TrackedActors.FindRef(OtherActor) ) // Get TMap Data: bool IsWithinPolygon
 		{
 			NotifyActorOfOverlapChange(OtherActor, false); // Notify that we left via bounds (likely height)
 		}
 		TrackedActors.Remove(OtherActor);
-		TrackedActorsOverlap.RemoveAt(ActorIndex);
 	}
 }
 
@@ -423,30 +418,18 @@ void APolyZone::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	int LastIndex = TrackedActors.Num()-1;
-	for (int Index = 0; Index <= LastIndex; ++Index)
+	for (const TPair<AActor*, bool>& MapPair : TrackedActors)
 	{
-		if( IsValid(TrackedActors[Index]) )
+		AActor* TrackedActor = MapPair.Key;
+		bool IsWithinPoly = MapPair.Value;
+		if ( IsValid(TrackedActor) ) // TMap magically removes invalid actors but this is for my sanity
 		{
-			if (TrackedActorsOverlap.Num() - 1 < Index)
+			bool NewIsWithinPoly = IsTrackedActorWithinPolyZone( TrackedActor );
+			if(NewIsWithinPoly != IsWithinPoly)
 			{
-				// Grow array for new items
-				TrackedActorsOverlap.SetNum(Index+1);
+				TrackedActors[TrackedActor] = NewIsWithinPoly;
+				NotifyActorOfOverlapChange(TrackedActor, NewIsWithinPoly);
 			}
-
-			bool OldIsWithinPoly = TrackedActorsOverlap[Index];
-			bool NewIsWithinPoly = IsTrackedActorWithinPolyZone( TrackedActors[Index] );
-
-			if(NewIsWithinPoly != OldIsWithinPoly)
-			{
-				TrackedActorsOverlap[Index] = NewIsWithinPoly;
-				NotifyActorOfOverlapChange(TrackedActors[Index], NewIsWithinPoly);
-			}
-		}
-		else
-		{
-			TrackedActors.RemoveAt(Index); // Remove invalid entries
-			TrackedActorsOverlap.RemoveAt(Index);
 		}
 	}
 }
