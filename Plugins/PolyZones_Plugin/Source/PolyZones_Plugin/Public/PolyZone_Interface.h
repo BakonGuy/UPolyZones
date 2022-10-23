@@ -24,9 +24,9 @@ class POLYZONES_PLUGIN_API IPolyZone_Interface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
 	void EnterPolyZone(APolyZone* PolyZone);
 
-	UFUNCTION(BlueprintImplementableEvent)
-	void LeavePolyZone(APolyZone* PolyZone);
+	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
+	void ExitPolyZone(APolyZone* PolyZone);
 };

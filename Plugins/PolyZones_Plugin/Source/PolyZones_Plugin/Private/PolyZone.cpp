@@ -2,8 +2,6 @@
 
 #include "PolyZone.h"
 
-#include "PolyZones_Math.h"
-#include "PolyZone_BoundsComponent.h"
 #include "PolyZone_Interface.h"
 #include "PolyZone_Visualizer.h"
 #include "Components/BillboardComponent.h"
@@ -130,7 +128,7 @@ void APolyZone::Construct_Bounds()
 {
 	// TODO: Calculate smallest rectangular bounds for overlap
 	PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
-	UBoxComponent* NewBoundsOverlap = NewObject<UPolyZone_BoundsComponent>(this);
+	UBoxComponent* NewBoundsOverlap = NewObject<UBoxComponent>(this);
 	NewBoundsOverlap->CreationMethod = EComponentCreationMethod::UserConstructionScript;
 	if(NewBoundsOverlap)
 	{
@@ -166,8 +164,8 @@ void APolyZone::Construct_SetupGrid()
 {
 	GridData.Empty(); // Can rebuild at runtime
 	
-	CellsX = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
-	CellsY = UPolyZones_Math::PZ_FMod( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
+	CellsX = DivideNoRemainder( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
+	CellsY = DivideNoRemainder( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
 
 	double OriginX = PolyBounds.Origin.X - (CellsX * 0.5f * CellSize);
 	double OriginY = PolyBounds.Origin.Y - (CellsY * 0.5f * CellSize);
@@ -443,6 +441,6 @@ void APolyZone::NotifyActorOfOverlapChange(AActor* TrackedActor, bool NewIsOverl
 	}
 	else
 	{
-		ZoneInterface->Execute_LeavePolyZone(TrackedActor, this);
+		ZoneInterface->Execute_ExitPolyZone(TrackedActor, this);
 	}
 }

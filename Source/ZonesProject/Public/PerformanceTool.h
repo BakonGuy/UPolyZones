@@ -16,6 +16,9 @@ class ZONESPROJECT_API UPerformanceTool : public UBlueprintFunctionLibrary
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "Performance")
-	static double GetCurrentTimeMs();
+	static double GetCurrentTimeSeconds();
+
+	UFUNCTION(BlueprintCallable, Category = "Performance")
+	static double MakeElapsedTimeMs(double StartSeconds, double EndSeconds);
 	
 };

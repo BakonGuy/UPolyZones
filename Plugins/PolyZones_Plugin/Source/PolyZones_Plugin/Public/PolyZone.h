@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "PolyZone_Grid.h"
-#include "Components/ShapeComponent.h"
 #include "Components/SplineComponent.h"
 #include "PolyZone.generated.h"
 
@@ -117,6 +116,18 @@ private:
 	void Construct_Bounds();
 	void Construct_SetupGrid();
 	void Construct_Visualizer();
+
+	static int32 DivideNoRemainder(float Dividend, float Divisor)
+	{
+		int32 Result = 0;
+		if (Divisor != 0.f)
+		{
+			const float Quotient = Dividend / Divisor;
+			Result = (Quotient < 0.f ? -1 : 1) * FMath::FloorToInt(FMath::Abs(Quotient));
+		}
+
+		return Result;
+	}
 	
 	UPROPERTY()
 	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
