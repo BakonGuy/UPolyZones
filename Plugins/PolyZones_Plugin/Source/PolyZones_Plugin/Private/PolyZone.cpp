@@ -378,6 +378,19 @@ void APolyZone::BeginPlay()
 		// Bind Overlap Events
 		BoundsOverlap->OnComponentBeginOverlap.AddDynamic(this, &APolyZone::OnBeginBoundsOverlap);
 		BoundsOverlap->OnComponentEndOverlap.AddDynamic(this, &APolyZone::OnEndBoundsOverlap);
+
+		// Track pre-spawned actors
+		TArray<AActor*> StartingOverlaps;
+		BoundsOverlap->GetOverlappingActors(StartingOverlaps);
+		int LastIndex = StartingOverlaps.Num()-1;
+		for (int Index = 0; Index <= LastIndex; ++Index)
+		{
+			if( StartingOverlaps[Index]->Implements<UPolyZone_Interface>() )
+			{
+				TrackedActors.Add(StartingOverlaps[Index]);
+				TrackedActorsOverlap.Add(false);
+			}
+		}
 	}
 }
 
