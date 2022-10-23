@@ -4,13 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "PolyZone_Grid.h"
-#include "ZoneActor.h"
 #include "Components/ShapeComponent.h"
 #include "Components/SplineComponent.h"
 #include "PolyZone.generated.h"
 
 UCLASS( hidecategories = (Input), meta = (PrioritizeCategories = "PolyZone") )
-class APolyZone : public AZoneActor
+class APolyZone : public AActor
 {
 	GENERATED_BODY()
 	

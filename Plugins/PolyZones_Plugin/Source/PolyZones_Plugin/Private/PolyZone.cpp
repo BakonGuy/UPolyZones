@@ -132,6 +132,7 @@ void APolyZone::Construct_Bounds()
 	// TODO: Calculate smallest rectangular bounds for overlap
 	PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
 	UBoxComponent* NewBoundsOverlap = NewObject<UPolyZone_BoundsComponent>(this);
+	NewBoundsOverlap->CreationMethod = EComponentCreationMethod::UserConstructionScript;
 	if(NewBoundsOverlap)
 	{
 		// Create
