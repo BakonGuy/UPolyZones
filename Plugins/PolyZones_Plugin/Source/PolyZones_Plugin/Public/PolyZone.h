@@ -110,6 +110,12 @@ public:
 	UFUNCTION()
 	void OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnEnterPolyZone(AActor* EnteredActor);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnExitPolyZone(AActor* ExitedActor);
+
 private:
 	void Build_PolyZone();
 	void Construct_Polygon();
@@ -157,6 +163,6 @@ private:
 	UPROPERTY()
 	TMap<AActor*, bool> TrackedActors;
 
-	void NotifyActorOfOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
+	void ZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
 
 };

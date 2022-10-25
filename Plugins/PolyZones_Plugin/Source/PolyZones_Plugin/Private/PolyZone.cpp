@@ -405,7 +405,7 @@ void APolyZone::OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 	{
 		if( TrackedActors.FindRef(OtherActor) ) // Get TMap Data: bool IsWithinPolygon
 		{
-			NotifyActorOfOverlapChange(OtherActor, false); // Notify that we left via bounds (likely height)
+			ZoneOverlapChange(OtherActor, false); // Notify that we left via bounds (likely height)
 		}
 		TrackedActors.Remove(OtherActor);
 	}
@@ -426,14 +426,23 @@ void APolyZone::Tick(float DeltaTime)
 			if(NewIsWithinPoly != IsWithinPoly)
 			{
 				TrackedActors[TrackedActor] = NewIsWithinPoly;
-				NotifyActorOfOverlapChange(TrackedActor, NewIsWithinPoly);
+				ZoneOverlapChange(TrackedActor, NewIsWithinPoly);
 			}
 		}
 	}
 }
 
-void APolyZone::NotifyActorOfOverlapChange(AActor* TrackedActor, bool NewIsOverlapped)
+void APolyZone::ZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped)
 {
+	if( NewIsOverlapped )
+	{
+		OnEnterPolyZone(TrackedActor);
+	}
+	else
+	{
+		OnExitPolyZone(TrackedActor);
+	}
+	
 	IPolyZone_Interface* ZoneInterface = Cast<IPolyZone_Interface>(TrackedActor);
 	if( NewIsOverlapped )
 	{
