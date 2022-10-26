@@ -18,11 +18,6 @@ protected:
 	virtual void ExecuteRebuildGeneratedMeshIfPending() override;
 	virtual void BeginPlay() override;
 
-	virtual bool IsEditorOnly() const override
-	{
-		return true;
-	}
-
 	UPROPERTY()
 	UMaterialInstanceDynamic* DynamicMaterial;
 	
