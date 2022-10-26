@@ -1,5 +1,7 @@
 // Copyright Seven47 Software All Rights Reserved.
 
+#if WITH_EDITORONLY_DATA
+
 #include "PolyZone_Visualizer.h"
 #include "GeometryScript/MeshPrimitiveFunctions.h"
 
@@ -9,6 +11,11 @@ APolyZone_Visualizer::APolyZone_Visualizer()
 	PrimaryActorTick.bCanEverTick = false; // Tick
 
 	PolyColor = FColor(0, 255, 0, 255);
+
+	if(IsValid(DynamicMeshComponent))
+	{
+		DynamicMeshComponent->SetShadowsEnabled(false);
+	}
 }
 
 void APolyZone_Visualizer::BeginPlay()
@@ -66,4 +73,5 @@ void APolyZone_Visualizer::RebuildMesh(UDynamicMesh* TargetMesh)
 	}
 }
 
+#endif
 

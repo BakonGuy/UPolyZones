@@ -2,6 +2,8 @@
 
 #pragma once
 
+#if WITH_EDITORONLY_DATA
+
 #include "CoreMinimal.h"
 #include "GeometryActors/GeneratedDynamicMeshActor.h"
 #include "PolyZone_Visualizer.generated.h"
@@ -17,6 +19,11 @@ public:
 protected:
 	virtual void ExecuteRebuildGeneratedMeshIfPending() override;
 	virtual void BeginPlay() override;
+
+	virtual bool IsEditorOnly() const override
+	{
+		return true;
+	}
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* DynamicMaterial;
@@ -35,3 +42,5 @@ public:
 	FColor PolyColor;
 	
 };
+
+#endif

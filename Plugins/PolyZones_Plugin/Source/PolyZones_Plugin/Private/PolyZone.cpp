@@ -2,8 +2,11 @@
 
 #include "PolyZone.h"
 
-#include "PolyZone_Interface.h"
+#if WITH_EDITOR
 #include "PolyZone_Visualizer.h"
+#endif
+
+#include "PolyZone_Interface.h"
 #include "Components/BillboardComponent.h"
 #include "Components/BoxComponent.h"
 #include "GeometryFramework/Public/Components/DynamicMeshComponent.h"
@@ -40,12 +43,12 @@ APolyZone::APolyZone()
 #if WITH_EDITORONLY_DATA // Editor only defaults
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 	ShowVisualization = true;
+	HideInPlay = true;
 
 	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
 	if(PolyIcon)
 	{
 		PolyIcon->SetRelativeLocation(FVector(0.0f,0.0f,50.0f));
-		PolyIcon->bUseAttachParentBound = true;
 		PolyIcon->SetupAttachment(RootComponent);
 	}
 	PolyZoneVisualizer = CreateDefaultSubobject<UChildActorComponent>("PolyZoneVisualizer", true); // EditorSubObject hides the component in game view
@@ -141,7 +144,7 @@ void APolyZone::Construct_Bounds()
 		// Setup Visualization
 		NewBoundsOverlap->ShapeColor = FColor(0, 255, 0);
 		NewBoundsOverlap->SetVisibility( ShowVisualization );
-		NewBoundsOverlap->SetHiddenInGame( false );
+		NewBoundsOverlap->SetHiddenInGame( true );
 #endif
 
 		// Setup Shape
@@ -193,6 +196,7 @@ void APolyZone::Construct_Visualizer()
 	{
 		if(IsValid(PolyZoneVisualizer))
 		{
+			PolyZoneVisualizer->SetHiddenInGame(HideInPlay);
 			PolyZoneVisualizer->SetWorldTransform(FTransform(FVector(0,0,GetActorLocation().Z))); // Move XY to world origin
 			PolyZoneVisualizer->CreateChildActor();
 			AActor* VizActor = PolyZoneVisualizer->GetChildActor();
@@ -369,7 +373,10 @@ void APolyZone::BeginPlay()
 {
 	Super::BeginPlay();
 	Construct_Bounds();
-	Construct_Visualizer();
+	if(!HideInPlay)
+	{
+		Construct_Visualizer();
+	}
 	if( IsValid(BoundsOverlap) )
 	{
 		// Bind Overlap Events

@@ -1,4 +1,4 @@
-// Some copyright should be here...
+// Copyright Seven47 Software All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -8,7 +8,12 @@ public class PolyZones_Plugin : ModuleRules
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "GeometryScriptingEditor", "GeometryScriptingCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core" });
 		PrivateDependencyModuleNames.AddRange(new string[] { "Projects", "CoreUObject", "Engine", "Slate", "SlateCore" });
+		
+		if (Target.bBuildEditor)
+		{
+			PublicDependencyModuleNames.AddRange(new string[] { "GeometryScriptingEditor", "GeometryScriptingCore" });
+		}
 	}
 }

@@ -35,6 +35,9 @@ public:
 #if WITH_EDITORONLY_DATA // Editor only variables
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	bool ShowVisualization;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
+	bool HideInPlay;
 	
 	UPROPERTY()
 	UBillboardComponent* PolyIcon;
