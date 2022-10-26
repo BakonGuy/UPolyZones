@@ -2,14 +2,13 @@
 
 #include "PolyZone.h"
 
-#if WITH_EDITOR
+#if WITH_EDITORONLY_DATA
 #include "PolyZone_Visualizer.h"
 #endif
 
 #include "PolyZone_Interface.h"
 #include "Components/BillboardComponent.h"
 #include "Components/BoxComponent.h"
-#include "GeometryFramework/Public/Components/DynamicMeshComponent.h"
 
 // Sets default values
 APolyZone::APolyZone()
@@ -50,12 +49,6 @@ APolyZone::APolyZone()
 	{
 		PolyIcon->SetRelativeLocation(FVector(0.0f,0.0f,50.0f));
 		PolyIcon->SetupAttachment(RootComponent);
-	}
-	PolyZoneVisualizer = CreateDefaultSubobject<UChildActorComponent>("PolyZoneVisualizer", true); // EditorSubObject hides the component in game view
-	if(PolyZoneVisualizer)
-	{
-		PolyZoneVisualizer->SetChildActorClass(APolyZone_Visualizer::StaticClass());
-		PolyZoneVisualizer->SetupAttachment(RootComponent); // TODO: Save and apply Polygon in local space so this can be attached
 	}
 #endif
 	SetCanBeDamaged(false);
@@ -194,12 +187,22 @@ void APolyZone::Construct_Visualizer()
 #if WITH_EDITORONLY_DATA
 	if(ShowVisualization)
 	{
-		if(IsValid(PolyZoneVisualizer))
+		UChildActorComponent* NewVisualizer = NewObject<UChildActorComponent>(this);
+		NewVisualizer->CreationMethod = EComponentCreationMethod::UserConstructionScript;
+		if(NewVisualizer)
 		{
-			PolyZoneVisualizer->SetHiddenInGame(HideInPlay);
-			PolyZoneVisualizer->SetWorldTransform(FTransform(FVector(0,0,GetActorLocation().Z))); // Move XY to world origin
-			PolyZoneVisualizer->CreateChildActor();
-			AActor* VizActor = PolyZoneVisualizer->GetChildActor();
+			NewVisualizer->RegisterComponent();
+			NewVisualizer->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+			NewVisualizer->SetChildActorClass(APolyZone_Visualizer::StaticClass());
+		}
+		EditorVisualizer = NewVisualizer;
+		
+		if(IsValid(EditorVisualizer))
+		{
+			EditorVisualizer->SetHiddenInGame(HideInPlay);
+			EditorVisualizer->SetWorldTransform(FTransform(FVector(0,0,GetActorLocation().Z))); // Move XY to world origin
+			EditorVisualizer->CreateChildActor();
+			AActor* VizActor = EditorVisualizer->GetChildActor();
 			APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
 			if(IsValid(Viz))
 			{
@@ -372,11 +375,17 @@ TArray<FPolyZone_GridCell> APolyZone::GetAllGridCells()
 void APolyZone::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Reconstruct needed data
 	Construct_Bounds();
+#if WITH_EDITORONLY_DATA
 	if(!HideInPlay)
 	{
 		Construct_Visualizer();
 	}
+#endif
+
+	// Initialize actor tracking
 	if( IsValid(BoundsOverlap) )
 	{
 		// Bind Overlap Events

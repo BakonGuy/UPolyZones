@@ -13,7 +13,7 @@ public class PolyZones_Plugin : ModuleRules
 		
 		if (Target.bBuildEditor)
 		{
-			PublicDependencyModuleNames.AddRange(new string[] { "GeometryScriptingEditor", "GeometryScriptingCore" });
+			PublicDependencyModuleNames.AddRange(new string[] { "PolyZones_Editor" });
 		}
 	}
 }

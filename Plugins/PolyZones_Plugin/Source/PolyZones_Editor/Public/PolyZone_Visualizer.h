@@ -2,14 +2,12 @@
 
 #pragma once
 
-#if WITH_EDITORONLY_DATA
-
 #include "CoreMinimal.h"
 #include "GeometryActors/GeneratedDynamicMeshActor.h"
 #include "PolyZone_Visualizer.generated.h"
 
 UCLASS(Transient)
-class APolyZone_Visualizer : public AGeneratedDynamicMeshActor
+class POLYZONES_EDITOR_API APolyZone_Visualizer : public AGeneratedDynamicMeshActor
 {
 	GENERATED_BODY()
 
@@ -42,5 +40,3 @@ public:
 	FColor PolyColor;
 	
 };
-
-#endif

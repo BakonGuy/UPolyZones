@@ -1,7 +1,5 @@
 // Copyright Seven47 Software All Rights Reserved.
 
-#if WITH_EDITORONLY_DATA
-
 #include "PolyZone_Visualizer.h"
 #include "GeometryScript/MeshPrimitiveFunctions.h"
 
@@ -72,6 +70,4 @@ void APolyZone_Visualizer::RebuildMesh(UDynamicMesh* TargetMesh)
 		SetupDynamicMaterial();
 	}
 }
-
-#endif
 

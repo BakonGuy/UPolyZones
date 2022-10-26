@@ -8,7 +8,7 @@
 #include "PolyZone.generated.h"
 
 UCLASS( hidecategories = (Input), meta = (PrioritizeCategories = "PolyZone") )
-class APolyZone : public AActor
+class POLYZONES_PLUGIN_API APolyZone : public AActor
 {
 	GENERATED_BODY()
 	
@@ -43,7 +43,7 @@ public:
 	UBillboardComponent* PolyIcon;
 
 	UPROPERTY()
-	UChildActorComponent* PolyZoneVisualizer;
+	UChildActorComponent* EditorVisualizer;
 #endif
 
 	// Configuration Options
