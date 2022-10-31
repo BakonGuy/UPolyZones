@@ -406,8 +406,33 @@ void APolyZone::BeginPlay()
 	}
 }
 
+void APolyZone::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	SetActorTickEnabled(false);
+
+	// Notify tracked actors
+	for (const TPair<AActor*, bool>& MapPair : TrackedActors)
+	{
+		AActor* TrackedActor = MapPair.Key;
+		bool IsWithinPoly = MapPair.Value;
+		if ( IsWithinPoly && IsValid(TrackedActor) )
+		{
+			ZoneOverlapChange(TrackedActor, false);
+		}
+	}
+	TrackedActors.Empty();
+	
+	Super::EndPlay(EndPlayReason);
+}
+
+void APolyZone::K2_DestroyActor()
+{
+	// Don't let blueprints destroy us straight away, or we will crash in tick
+	WantsDestroyed = true;
+}
+
 void APolyZone::OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-	bool bFromSweep, const FHitResult& SweepResult)
+                                     bool bFromSweep, const FHitResult& SweepResult)
 {
 	if( OtherActor->Implements<UPolyZone_Interface>() )
 	{
@@ -432,8 +457,16 @@ void APolyZone::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	if(WantsDestroyed)
+	{
+		Destroy();
+		return;
+	}
+	
 	for (const TPair<AActor*, bool>& MapPair : TrackedActors)
 	{
+		if( !IsValid(this) ) { break; }
+		
 		AActor* TrackedActor = MapPair.Key;
 		bool IsWithinPoly = MapPair.Value;
 		if ( IsValid(TrackedActor) ) // TMap magically removes invalid actors but this is for my sanity
@@ -452,10 +485,12 @@ void APolyZone::ZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped)
 {
 	if( NewIsOverlapped )
 	{
+		ActorsInPolyZone.Add(TrackedActor);
 		OnEnterPolyZone(TrackedActor);
 	}
 	else
 	{
+		ActorsInPolyZone.Remove(TrackedActor);
 		OnExitPolyZone(TrackedActor);
 	}
 	

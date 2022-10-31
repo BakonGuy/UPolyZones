@@ -83,9 +83,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
 
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
+	TArray<AActor*> GetAllActorsInPolyZone() { return ActorsInPolyZone; }
+
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override; // Construction Script
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	virtual void K2_DestroyActor() override;
+	bool WantsDestroyed = false; // A blueprint called destroy on us
 
 public:	
 	virtual void Tick(float DeltaTime) override;
@@ -165,6 +172,9 @@ private:
 	// Actor Tracking
 	UPROPERTY()
 	TMap<AActor*, bool> TrackedActors;
+
+	UPROPERTY()
+	TArray<AActor*> ActorsInPolyZone;
 
 	void ZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
 
