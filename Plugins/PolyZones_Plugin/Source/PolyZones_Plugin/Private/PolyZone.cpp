@@ -410,8 +410,17 @@ void APolyZone::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	SetActorTickEnabled(false);
 
-	// Notify tracked actors
+	TArray< TPair<AActor*, bool> > TrackedActorsArray;
+
+	// Save map as array, so changes won't effect the loop
 	for (const TPair<AActor*, bool>& MapPair : TrackedActors)
+	{
+		TrackedActorsArray.Add(MapPair);
+	}
+	TrackedActors.Empty();
+	
+	// Notify tracked actors
+	for (const TPair<AActor*, bool>& MapPair : TrackedActorsArray)
 	{
 		AActor* TrackedActor = MapPair.Key;
 		bool IsWithinPoly = MapPair.Value;
@@ -420,14 +429,13 @@ void APolyZone::EndPlay(const EEndPlayReason::Type EndPlayReason)
 			ZoneOverlapChange(TrackedActor, false);
 		}
 	}
-	TrackedActors.Empty();
 	
 	Super::EndPlay(EndPlayReason);
 }
 
 void APolyZone::K2_DestroyActor()
 {
-	// Don't let blueprints destroy us straight away, or we will crash in tick
+	// Delays destroy by 1 tick, if called via blueprint
 	WantsDestroyed = true;
 }
 
@@ -463,7 +471,11 @@ void APolyZone::Tick(float DeltaTime)
 		return;
 	}
 	
-	for (const TPair<AActor*, bool>& MapPair : TrackedActors)
+	// We cannot notify while in the TMap loop, because the notifies may cause the map to change
+	TArray<TPair<AActor*, bool>> ActorsToNotify;
+
+	// Check if each tracked actor is within the polyzone
+	for(const TPair<AActor*, bool>& MapPair : TrackedActors)
 	{
 		if( !IsValid(this) ) { break; }
 		
@@ -475,9 +487,15 @@ void APolyZone::Tick(float DeltaTime)
 			if(NewIsWithinPoly != IsWithinPoly)
 			{
 				TrackedActors[TrackedActor] = NewIsWithinPoly;
-				ZoneOverlapChange(TrackedActor, NewIsWithinPoly);
+				ActorsToNotify.Add(MapPair); // If our status has changed, we should notify the interface
 			}
 		}
+	}
+
+	// Now that we know which actors have changed, we can notify their interfaces
+	for(TPair<AActor*, bool>& ActorStatus: ActorsToNotify)
+	{
+		ZoneOverlapChange(ActorStatus.Key, ActorStatus.Value);
 	}
 }
 
