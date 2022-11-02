@@ -50,6 +50,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	float ZoneHeight;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
+	bool AutoCellSize;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone")
 	float CellSize;
@@ -99,6 +102,9 @@ public:
 
 	// Make private later
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
+	bool UsesGrid;
+	
 	// Grid's origin in world space
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
 	FVector GridOrigin_WS;

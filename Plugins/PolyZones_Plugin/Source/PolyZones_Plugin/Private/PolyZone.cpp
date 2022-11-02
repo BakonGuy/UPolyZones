@@ -22,6 +22,8 @@ APolyZone::APolyZone()
 	OverlapTypes.Add(ECollisionChannel::ECC_Pawn);
 	
 	ZoneHeight = 500.0f;
+	UsesGrid = false;
+	AutoCellSize = true;
 	CellSize = 50.0f;
 	CellsX = 0;
 	CellsY = 0;
@@ -130,6 +132,7 @@ void APolyZone::Construct_Bounds()
 	{
 		// Create
 		FVector OverlapExtent = FVector(PolyBounds.BoxExtent.X, PolyBounds.BoxExtent.Y, ZoneHeight*0.5f);
+		NewBoundsOverlap->SetAbsolute(true, true, true); // Ignore relative transform
 		NewBoundsOverlap->RegisterComponent();
 		NewBoundsOverlap->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
@@ -159,24 +162,36 @@ void APolyZone::Construct_Bounds()
 void APolyZone::Construct_SetupGrid()
 {
 	GridData.Empty(); // Can rebuild at runtime
-	
-	CellsX = DivideNoRemainder( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
-	CellsY = DivideNoRemainder( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
 
-	double OriginX = PolyBounds.Origin.X - (CellsX * 0.5f * CellSize);
-	double OriginY = PolyBounds.Origin.Y - (CellsY * 0.5f * CellSize);
-	GridOrigin_WS = FVector(OriginX, OriginY, GetActorLocation().Z);
-
-	// Populate grid
-	for (int x = 0; x < CellsX-1; ++x)
+	int32 NumPoints = PolySpline->GetNumberOfSplinePoints();
+	UsesGrid = NumPoints >= 6;
+	if(UsesGrid)
 	{
-		for (int y = 0; y < CellsY-1; ++y)
+		if(AutoCellSize)
 		{
-			FPolyZone_GridCell NewCoord = FPolyZone_GridCell(x, y);
-			POLYZONE_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
-			if(NewCoordFlag != POLYZONE_CELL_FLAGS::Outside) // Unsaved cells can be considered outside the polygon
+			float DesiredCellsOnLength = FMath::Min(40.0f, 2.0f * NumPoints);
+			float LengthToCover = FMath::Max(PolyBounds.BoxExtent.X * 2.0f, PolyBounds.BoxExtent.Y * 2.0f);
+			CellSize = LengthToCover / DesiredCellsOnLength;
+		}
+		
+		CellsX = DivideNoRemainder( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
+		CellsY = DivideNoRemainder( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
+
+		double OriginX = PolyBounds.Origin.X - (CellsX * 0.5f * CellSize);
+		double OriginY = PolyBounds.Origin.Y - (CellsY * 0.5f * CellSize);
+		GridOrigin_WS = FVector(OriginX, OriginY, GetActorLocation().Z);
+
+		// Populate grid
+		for (int x = 0; x < CellsX-1; ++x)
+		{
+			for (int y = 0; y < CellsY-1; ++y)
 			{
-				GridData.Add(NewCoord, NewCoordFlag);
+				FPolyZone_GridCell NewCoord = FPolyZone_GridCell(x, y);
+				POLYZONE_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
+				if(NewCoordFlag != POLYZONE_CELL_FLAGS::Outside) // Unsaved cells can be considered outside the polygon
+					{
+					GridData.Add(NewCoord, NewCoordFlag);
+					}
 			}
 		}
 	}
@@ -230,17 +245,21 @@ bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool InfiniteHeight)
 	}
 
 	// Grid check
-	POLYZONE_CELL_FLAGS CellFlag = GetFlagAtLocation(TestPoint);
-	if(CellFlag == POLYZONE_CELL_FLAGS::Within)
+	if(UsesGrid)
 	{
-		return true;
+		POLYZONE_CELL_FLAGS CellFlag = GetFlagAtLocation(TestPoint);
+		if(CellFlag == POLYZONE_CELL_FLAGS::Outside)
+		{
+			return false;
+		}
+		if(CellFlag == POLYZONE_CELL_FLAGS::Within)
+		{
+			return true;
+		}
 	}
-	if(CellFlag == POLYZONE_CELL_FLAGS::OnEdge)
-	{
-		return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
-	}
-	
-	return false;
+
+	// On Edge
+	return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
 }
 
 bool APolyZone::IsTrackedActorWithinPolyZone(AActor* TrackedActor)
@@ -303,15 +322,15 @@ FVector APolyZone::GetGridCellCenterWorld(const FPolyZone_GridCell& Cell)
 FPolyZone_GridCell APolyZone::GetGridCellAtLocation(FVector Location)
 {
 	FTransform GridOriginTransform = FTransform( FVector(GridOrigin_WS.X, GridOrigin_WS.Y, 0.0f) );
-	FVector LocationLocalToGrid = GridOriginTransform.InverseTransformPosition(Location);
-	int32 GridX = FMath::RoundToInt32(LocationLocalToGrid.X / CellSize);
-	int32 GridY = FMath::RoundToInt32(LocationLocalToGrid.Y / CellSize);
+	FVector LocationOnGrid = GridOriginTransform.InverseTransformPosition(Location);
+	int32 GridX = FMath::RoundToInt32(LocationOnGrid.X / CellSize);
+	int32 GridY = FMath::RoundToInt32(LocationOnGrid.Y / CellSize);
 	return FPolyZone_GridCell(GridX, GridY);
 }
 
 POLYZONE_CELL_FLAGS APolyZone::GetGridCellFlag(const FPolyZone_GridCell& Cell)
 {
-	return GridData.FindRef(Cell);
+	return GridData.FindRef(Cell); // Default is outside flag, if not found
 }
 
 POLYZONE_CELL_FLAGS APolyZone::GetFlagAtLocation(FVector Location)

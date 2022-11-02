@@ -7,10 +7,10 @@ struct FPolyZone_GridCell
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	int32 X;
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	int32 Y;
 
 	FPolyZone_GridCell(int32 aX, int32 aY)
