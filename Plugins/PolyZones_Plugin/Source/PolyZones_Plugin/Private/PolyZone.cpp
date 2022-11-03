@@ -25,8 +25,8 @@ APolyZone::APolyZone()
 	UsesGrid = false;
 	AutoCellSize = true;
 	CellSize = 50.0f;
-	CellsX = 0;
-	CellsY = 0;
+	GridCellsX = 0;
+	GridCellsY = 0;
 
 	CornerDirections.Add( FVector2D(-1.0f, -1.0f) ); // BL
 	CornerDirections.Add( FVector2D(1.0f, -1.0f) ); // TL
@@ -174,17 +174,17 @@ void APolyZone::Construct_SetupGrid()
 			CellSize = LengthToCover / DesiredCellsOnLength;
 		}
 		
-		CellsX = DivideNoRemainder( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
-		CellsY = DivideNoRemainder( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
+		GridCellsX = DivideNoRemainder( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
+		GridCellsY = DivideNoRemainder( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
 
-		double OriginX = PolyBounds.Origin.X - (CellsX * 0.5f * CellSize);
-		double OriginY = PolyBounds.Origin.Y - (CellsY * 0.5f * CellSize);
-		GridOrigin_WS = FVector(OriginX, OriginY, GetActorLocation().Z);
+		double OriginX = PolyBounds.Origin.X - (GridCellsX * 0.5f * CellSize);
+		double OriginY = PolyBounds.Origin.Y - (GridCellsY * 0.5f * CellSize);
+		GridOrigin = FVector(OriginX, OriginY, GetActorLocation().Z);
 
 		// Populate grid
-		for (int x = 0; x < CellsX-1; ++x)
+		for (int x = 0; x < GridCellsX-1; ++x)
 		{
-			for (int y = 0; y < CellsY-1; ++y)
+			for (int y = 0; y < GridCellsY-1; ++y)
 			{
 				FPolyZone_GridCell NewCoord = FPolyZone_GridCell(x, y);
 				POLYZONE_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
@@ -230,16 +230,36 @@ void APolyZone::Construct_Visualizer()
 #endif
 }
 
-bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool InfiniteHeight)
+void APolyZone::GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TArray<AActor*>& Actors)
+{
+	if( Class )
+	{
+		for(AActor* Actor : ActorsInPolyZone)
+		{
+			if( Actor->IsA(Class) )
+			{
+				Actors.Add(Actor); // If we are the filtered subclass, add us to the output
+			}
+		}
+	}
+}
+
+bool APolyZone::IsActorWithinPolyZone(AActor* Actor, bool SkipHeight, bool SkipBounds)
+{
+	FVector TestPoint = Actor->GetActorLocation();
+	return IsPointWithinPolyZone( TestPoint, SkipHeight, SkipBounds );
+}
+
+bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight, bool SkipBounds)
 {
 	// Height Check
-	if(!InfiniteHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
+	if(!SkipHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin.Z, GridOrigin.Z + ZoneHeight))
 	{
 		return false;
 	}
 
 	// 2D Bounds Check
-	if ( TestPoint.X < Bounds_MinX || TestPoint.X > Bounds_MaxX || TestPoint.Y < Bounds_MinY || TestPoint.Y > Bounds_MaxY )
+	if (!SkipBounds && TestPoint.X < Bounds_MinX || TestPoint.X > Bounds_MaxX || TestPoint.Y < Bounds_MinY || TestPoint.Y > Bounds_MaxY )
 	{
 		return false;
 	}
@@ -259,19 +279,6 @@ bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool InfiniteHeight)
 	}
 
 	// On Edge
-	return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
-}
-
-bool APolyZone::IsTrackedActorWithinPolyZone(AActor* TrackedActor)
-{
-	FVector TestPoint = TrackedActor->GetActorLocation();
-	
-	// Height Check
-	if( !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin_WS.Z, GridOrigin_WS.Z + ZoneHeight))
-	{
-		return false;
-	}
-
 	return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
 }
 
@@ -311,7 +318,7 @@ bool APolyZone::IsPointWithinPolygon(FVector2D TestPoint)
 
 FVector APolyZone::GetGridCellWorld(const FPolyZone_GridCell& Cell)
 {
-	return GridOrigin_WS + FVector(Cell.X * CellSize, Cell.Y * CellSize, 0.0f);
+	return GridOrigin + FVector(Cell.X * CellSize, Cell.Y * CellSize, 0.0f);
 }
 
 FVector APolyZone::GetGridCellCenterWorld(const FPolyZone_GridCell& Cell)
@@ -321,7 +328,7 @@ FVector APolyZone::GetGridCellCenterWorld(const FPolyZone_GridCell& Cell)
 
 FPolyZone_GridCell APolyZone::GetGridCellAtLocation(FVector Location)
 {
-	FTransform GridOriginTransform = FTransform( FVector(GridOrigin_WS.X, GridOrigin_WS.Y, 0.0f) );
+	FTransform GridOriginTransform = FTransform( FVector(GridOrigin.X, GridOrigin.Y, 0.0f) );
 	FVector LocationOnGrid = GridOriginTransform.InverseTransformPosition(Location);
 	int32 GridX = FMath::RoundToInt32(LocationOnGrid.X / CellSize);
 	int32 GridY = FMath::RoundToInt32(LocationOnGrid.Y / CellSize);
@@ -502,7 +509,7 @@ void APolyZone::Tick(float DeltaTime)
 		bool IsWithinPoly = MapPair.Value;
 		if ( IsValid(TrackedActor) ) // TMap magically removes invalid actors but this is for my sanity
 		{
-			bool NewIsWithinPoly = IsTrackedActorWithinPolyZone( TrackedActor );
+			bool NewIsWithinPoly = IsActorWithinPolyZone( TrackedActor, true, true );
 			if(NewIsWithinPoly != IsWithinPoly)
 			{
 				TrackedActors[TrackedActor] = NewIsWithinPoly;

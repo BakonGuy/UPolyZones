@@ -60,10 +60,10 @@ public:
 	// Poly Zone functions
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
-	bool IsPointWithinPolyZone(FVector TestPoint, bool InfiniteHeight);
-
+	bool IsActorWithinPolyZone(AActor* Actor, bool SkipHeight = false, bool SkipBounds = false);
+	
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
-	bool IsTrackedActorWithinPolyZone(AActor* TrackedActor);
+	bool IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight = false, bool SkipBounds = false);
 	
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsPointWithinPolygon(FVector2D TestPoint);
@@ -72,13 +72,13 @@ public:
 	TArray<FPolyZone_GridCell> GetAllGridCells();
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
+	FPolyZone_GridCell GetGridCellAtLocation(FVector Location);
+
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	FVector GetGridCellWorld(const FPolyZone_GridCell& Cell);
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	FVector GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
-
-	UFUNCTION(BlueprintCallable, Category = "PolyZone")
-	FPolyZone_GridCell GetGridCellAtLocation(FVector Location);
 	
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	POLYZONE_CELL_FLAGS GetGridCellFlag(const FPolyZone_GridCell& Cell);
@@ -87,7 +87,10 @@ public:
 	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
-	TArray<AActor*> GetAllActorsInPolyZone() { return ActorsInPolyZone; }
+	TArray<AActor*> GetAllActorsWithinPolyZone() { return ActorsInPolyZone; }
+
+	UFUNCTION(BlueprintCallable, Category = "PolyZone", meta=(DeterminesOutputType="Class", DynamicOutputParam="Actors"))
+	void GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TArray<AActor*>& Actors);
 
 protected:
 	virtual void OnConstruction(const FTransform& Transform) override; // Construction Script
@@ -102,18 +105,18 @@ public:
 
 	// Make private later
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone")
 	bool UsesGrid;
 	
-	// Grid's origin in world space
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
-	FVector GridOrigin_WS;
+	// Origin of the PolyZone grid in world space (Also the location of Grid 0,0)
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone")
+	FVector GridOrigin;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
-	int CellsX;
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone")
+	int32 GridCellsX;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "PolyZone")
-	int CellsY;
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone")
+	int32 GridCellsY;
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
 	void PolyZoneConstructed();
