@@ -71,3 +71,4 @@ DerivedDataCache/
 
 # Temp Dev Files
 #Content/Temp/
+/Plugins/PolyZones_Plugin/Config/FilterPlugin.ini
