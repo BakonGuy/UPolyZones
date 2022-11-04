@@ -8,7 +8,7 @@
 	"CreatedBy": "Seven47 Software",
 	"CreatedByURL": "",
 	"DocsURL": "https://docs.google.com/document/d/1LImYH8-wym4BMjbLLQ6TAif4HQqEtHW0dAr_QyFAQh4",
-	"MarketplaceURL": "",
+	"MarketplaceURL": "com.epicgames.launcher://ue/marketplace/product/03c8fc7866b54c2bb24891fdffdd4005",
 	"SupportURL": "https://discord.gg/8YvWARS",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
@@ -18,7 +18,13 @@
 		{
 			"Name": "PolyZones_Plugin",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64",
+				"Android",
+				"Linux",
+				"Mac"
+			]
 		},
 		{
 			"Name": "PolyZones_Editor",

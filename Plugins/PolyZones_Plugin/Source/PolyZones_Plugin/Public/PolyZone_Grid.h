@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// Copyright 2022 Seven47 Software. All Rights Reserved.
+
+#pragma once
 
 #include "PolyZone_Grid.generated.h"
 

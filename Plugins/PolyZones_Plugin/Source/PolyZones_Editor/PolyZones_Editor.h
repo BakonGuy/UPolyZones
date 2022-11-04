@@ -1,4 +1,6 @@
-﻿#pragma once
+﻿// Copyright 2022 Seven47 Software. All Rights Reserved.
+
+#pragma once
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"

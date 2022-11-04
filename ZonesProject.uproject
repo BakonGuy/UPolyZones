@@ -27,6 +27,6 @@
 		}
 	],
 	"TargetPlatforms": [
-		"Windows"
+		"AllDesktop"
 	]
 }

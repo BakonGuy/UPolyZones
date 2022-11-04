@@ -1,4 +1,6 @@
-﻿using UnrealBuildTool;
+﻿// Copyright 2022 Seven47 Software. All Rights Reserved.
+
+using UnrealBuildTool;
 
 public class PolyZones_Editor : ModuleRules
 {

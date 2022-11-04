@@ -1,4 +1,6 @@
-﻿#include "PolyZones_Editor.h"
+﻿// Copyright 2022 Seven47 Software. All Rights Reserved.
+
+#include "PolyZones_Editor.h"
 
 #define LOCTEXT_NAMESPACE "FPolyZones_EditorModule"
 
