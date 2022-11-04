@@ -1,35 +1,35 @@
 {
-  "FileVersion": 3,
-  "Version": 1,
-  "VersionName": "1.0",
-  "FriendlyName": "Poly Zones Plugin",
-  "Description": "Plugin for drawing polygonal zones that can test if a point is within it's interior.",
-  "Category": "Other",
-  "CreatedBy": "Seven47 Software",
-  "CreatedByURL": "",
-  "DocsURL": "",
-  "MarketplaceURL": "",
-  "SupportURL": "",
-  "CanContainContent": true,
-  "IsBetaVersion": true,
-  "IsExperimentalVersion": false,
-  "Installed": false,
-  "Modules": [
-    {
-      "Name": "PolyZones_Plugin",
-      "Type": "Runtime",
-      "LoadingPhase": "Default"
-    },
-    {
-      "Name": "PolyZones_Editor",
-      "Type": "Editor",
-      "LoadingPhase": "Default"
-    }
-  ],
-  "Plugins": [
-    {
-      "Name": "GeometryScripting",
-      "Enabled": true
-    }
-  ]
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "PolyZones Plugin",
+	"Description": "Plugin that allows you to draw overlap zones as complex polygonal shapes.",
+	"Category": "Gameplay",
+	"CreatedBy": "Seven47 Software",
+	"CreatedByURL": "",
+	"DocsURL": "https://docs.google.com/document/d/1LImYH8-wym4BMjbLLQ6TAif4HQqEtHW0dAr_QyFAQh4",
+	"MarketplaceURL": "",
+	"SupportURL": "https://discord.gg/8YvWARS",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "PolyZones_Plugin",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "PolyZones_Editor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "GeometryScripting",
+			"Enabled": true
+		}
+	]
 }
