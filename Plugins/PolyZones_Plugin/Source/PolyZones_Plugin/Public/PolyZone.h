@@ -81,6 +81,12 @@ public:	// Accessible anywhere
 	
 	// ~~ PolyZone I/O
 
+	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
+	void OnEnterPolyZone(AActor* EnteredActor);
+
+	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
+	void OnExitPolyZone(AActor* ExitedActor);
+	
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsActorWithinPolyZone(AActor* Actor, bool SkipHeight = false, bool SkipBounds = false);
 	
@@ -95,33 +101,27 @@ public:	// Accessible anywhere
 
 	// ~~ PolyZone Grid I/O
 	
-	UFUNCTION(BlueprintCallable, Category = "PolyZoneGrid")
+	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	TArray<FPolyZone_GridCell> GetAllGridCells();
 
-	UFUNCTION(BlueprintCallable, Category = "PolyZoneGrid")
+	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	FPolyZone_GridCell GetGridCellAtLocation(FVector Location);
 
-	UFUNCTION(BlueprintCallable, Category = "PolyZoneGrid")
+	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	FVector GetGridCellWorld(const FPolyZone_GridCell& Cell);
 
-	UFUNCTION(BlueprintCallable, Category = "PolyZoneGrid")
+	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	FVector GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
 	
-	UFUNCTION(BlueprintCallable, Category = "PolyZoneGrid")
+	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	POLYZONE_CELL_FLAGS GetGridCellFlag(const FPolyZone_GridCell& Cell);
 
-	UFUNCTION(BlueprintCallable, Category = "PolyZoneGrid")
+	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
 	
 	/*Origin of the PolyZone grid in world space (Also the location of Grid 0,0)*/
-	UPROPERTY(BlueprintReadOnly, Category = "PolyZoneGrid")
+	UPROPERTY(/*BlueprintReadOnly, Category = "PolyZoneGrid"*/)
 	FVector GridOrigin;
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnEnterPolyZone(AActor* EnteredActor);
-
-	UFUNCTION(BlueprintImplementableEvent)
-	void OnExitPolyZone(AActor* ExitedActor);
 
 private: // Accessible by this class only
 	void Build_PolyZone();
