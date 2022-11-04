@@ -70,10 +70,7 @@ void APolyZone::BeginPlay()
 	// Reconstruct needed data
 	Construct_Bounds();
 #if WITH_EDITORONLY_DATA
-	if(!HideInPlay)
-	{
-		Construct_Visualizer();
-	}
+	Construct_Visualizer();
 #endif
 
 	// Initialize actor tracking
@@ -298,13 +295,13 @@ void APolyZone::Construct_Visualizer()
 		
 		if(IsValid(EditorVisualizer))
 		{
-			EditorVisualizer->SetHiddenInGame(HideInPlay);
 			EditorVisualizer->SetWorldTransform(FTransform(FVector(0,0,GetActorLocation().Z))); // Move XY to world origin
 			EditorVisualizer->CreateChildActor();
 			AActor* VizActor = EditorVisualizer->GetChildActor();
 			APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
 			if(IsValid(Viz))
 			{
+				Viz->SetActorHiddenInGame(HideInPlay);
 				Viz->PolygonVertices = Polygon2D;
 				Viz->PolyZoneHeight = ZoneHeight;
 				Viz->PolyColor = ZoneColor;
