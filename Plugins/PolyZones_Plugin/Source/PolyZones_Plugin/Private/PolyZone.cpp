@@ -15,19 +15,18 @@ APolyZone::APolyZone()
 {
 	PrimaryActorTick.bCanEverTick = true; // Tick
 
-	// Defaults
+	// Config Defaults
+	ActorTracking = true;
 	ZoneColor = FColor(0, 255, 0, 255);
-	
 	ZoneObjectType = ECollisionChannel::ECC_WorldDynamic;
 	OverlapTypes.Add(ECollisionChannel::ECC_Pawn);
-	
-	ZoneHeight = 500.0f;
+	ZoneHeight = 250.0f;
+
+	// Grid defaults
 	UsesGrid = false;
-	AutoCellSize = true;
 	CellSize = 50.0f;
 	GridCellsX = 0;
 	GridCellsY = 0;
-
 	CornerDirections.Add( FVector2D(-1.0f, -1.0f) ); // BL
 	CornerDirections.Add( FVector2D(1.0f, -1.0f) ); // TL
 	CornerDirections.Add( FVector2D(1.0f, 1.0f) ); // TR
@@ -61,6 +60,91 @@ void APolyZone::OnConstruction(const FTransform& Transform)
 	Build_PolyZone();
 	PolyZoneConstructed(); // For some reason blueprints construction script has a race condition, so we call our own for now
 	Super::OnConstruction(Transform);
+}
+
+// Called when the game starts or when spawned
+void APolyZone::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Reconstruct needed data
+	Construct_Bounds();
+#if WITH_EDITORONLY_DATA
+	if(!HideInPlay)
+	{
+		Construct_Visualizer();
+	}
+#endif
+
+	// Initialize actor tracking
+	if( IsValid(BoundsOverlap) )
+	{
+		// Bind Overlap Events
+		BoundsOverlap->OnComponentBeginOverlap.AddDynamic(this, &APolyZone::OnBeginBoundsOverlap);
+		BoundsOverlap->OnComponentEndOverlap.AddDynamic(this, &APolyZone::OnEndBoundsOverlap);
+
+		// Track pre-spawned actors
+		TArray<AActor*> StartingOverlaps;
+		BoundsOverlap->GetOverlappingActors(StartingOverlaps);
+		int LastIndex = StartingOverlaps.Num()-1;
+		for (int Index = 0; Index <= LastIndex; ++Index)
+		{
+			if( StartingOverlaps[Index]->Implements<UPolyZone_Interface>() )
+			{
+				TrackedActors.Add(StartingOverlaps[Index], false);
+			}
+		}
+	}
+}
+
+void APolyZone::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	SetActorTickEnabled(false);
+
+	TArray< TPair<AActor*, bool> > TrackedActorsArray;
+
+	// Save map as array, so changes won't effect the loop
+	for (const TPair<AActor*, bool>& MapPair : TrackedActors)
+	{
+		TrackedActorsArray.Add(MapPair);
+	}
+	TrackedActors.Empty();
+	
+	// Notify tracked actors
+	for (const TPair<AActor*, bool>& MapPair : TrackedActorsArray)
+	{
+		AActor* TrackedActor = MapPair.Key;
+		bool IsWithinPoly = MapPair.Value;
+		if ( IsWithinPoly && IsValid(TrackedActor) )
+		{
+			PolyZoneOverlapChange(TrackedActor, false);
+		}
+	}
+	
+	Super::EndPlay(EndPlayReason);
+}
+
+void APolyZone::K2_DestroyActor()
+{
+	// Delays destroy by 1 tick, if called via blueprint
+	WantsDestroyed = true;
+}
+
+// Called every frame
+void APolyZone::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if(WantsDestroyed)
+	{
+		Destroy();
+		return;
+	}
+
+	if( ActorTracking )
+	{
+		DoActorTracking();
+	}
 }
 
 // Rebuilds the PolyZone (can be run during runtime)
@@ -167,31 +251,31 @@ void APolyZone::Construct_SetupGrid()
 	UsesGrid = NumPoints >= 6;
 	if(UsesGrid)
 	{
-		if(AutoCellSize)
-		{
-			float DesiredCellsOnLength = FMath::Min(40.0f, 2.0f * NumPoints);
-			float LengthToCover = FMath::Max(PolyBounds.BoxExtent.X * 2.0f, PolyBounds.BoxExtent.Y * 2.0f);
-			CellSize = LengthToCover / DesiredCellsOnLength;
-		}
-		
+		// Calculate a performant cell size
+		float DesiredCellsOnLength = FMath::Min(40.0f, 2.0f * NumPoints);
+		float LengthToCover = FMath::Max(PolyBounds.BoxExtent.X * 2.0f, PolyBounds.BoxExtent.Y * 2.0f);
+		CellSize = LengthToCover / DesiredCellsOnLength;
+
+		// Find how many cells we will need to cover the polygon
 		GridCellsX = DivideNoRemainder( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
 		GridCellsY = DivideNoRemainder( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
 
+		// Center the grid over the polygon
 		double OriginX = PolyBounds.Origin.X - (GridCellsX * 0.5f * CellSize);
 		double OriginY = PolyBounds.Origin.Y - (GridCellsY * 0.5f * CellSize);
 		GridOrigin = FVector(OriginX, OriginY, GetActorLocation().Z);
 
-		// Populate grid
+		// Populate grid data
 		for (int x = 0; x < GridCellsX-1; ++x)
 		{
 			for (int y = 0; y < GridCellsY-1; ++y)
 			{
 				FPolyZone_GridCell NewCoord = FPolyZone_GridCell(x, y);
 				POLYZONE_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
-				if(NewCoordFlag != POLYZONE_CELL_FLAGS::Outside) // Unsaved cells can be considered outside the polygon
-					{
+				if(NewCoordFlag != POLYZONE_CELL_FLAGS::Outside) // Unpopulated cells default to outside polygon, so don't add data we don't need
+				{
 					GridData.Add(NewCoord, NewCoordFlag);
-					}
+				}
 			}
 		}
 	}
@@ -230,8 +314,22 @@ void APolyZone::Construct_Visualizer()
 #endif
 }
 
+TArray<AActor*> APolyZone::GetAllActorsWithinPolyZone()
+{
+	if( !ActorTracking )
+	{
+		DoActorTracking(); //If actor tracking is disabled, call it once so we have our list of actors
+	}
+	return ActorsInPolyZone;
+}
+
 void APolyZone::GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TArray<AActor*>& Actors)
 {
+	if( !ActorTracking )
+	{
+		DoActorTracking(); //If actor tracking is disabled, call it once so we have our list of actors
+	}
+	
 	if( Class )
 	{
 		for(AActor* Actor : ActorsInPolyZone)
@@ -277,8 +375,7 @@ bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight, bool S
 			return true;
 		}
 	}
-
-	// On Edge
+	
 	return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
 }
 
@@ -315,6 +412,7 @@ bool APolyZone::IsPointWithinPolygon(FVector2D TestPoint)
 
 	return InsidePoly;
 }
+// END MIT LICENSE
 
 FVector APolyZone::GetGridCellWorld(const FPolyZone_GridCell& Cell)
 {
@@ -397,74 +495,6 @@ TArray<FPolyZone_GridCell> APolyZone::GetAllGridCells()
 	return Coords;
 }
 
-// Called when the game starts or when spawned
-void APolyZone::BeginPlay()
-{
-	Super::BeginPlay();
-
-	// Reconstruct needed data
-	Construct_Bounds();
-#if WITH_EDITORONLY_DATA
-	if(!HideInPlay)
-	{
-		Construct_Visualizer();
-	}
-#endif
-
-	// Initialize actor tracking
-	if( IsValid(BoundsOverlap) )
-	{
-		// Bind Overlap Events
-		BoundsOverlap->OnComponentBeginOverlap.AddDynamic(this, &APolyZone::OnBeginBoundsOverlap);
-		BoundsOverlap->OnComponentEndOverlap.AddDynamic(this, &APolyZone::OnEndBoundsOverlap);
-
-		// Track pre-spawned actors
-		TArray<AActor*> StartingOverlaps;
-		BoundsOverlap->GetOverlappingActors(StartingOverlaps);
-		int LastIndex = StartingOverlaps.Num()-1;
-		for (int Index = 0; Index <= LastIndex; ++Index)
-		{
-			if( StartingOverlaps[Index]->Implements<UPolyZone_Interface>() )
-			{
-				TrackedActors.Add(StartingOverlaps[Index], false);
-			}
-		}
-	}
-}
-
-void APolyZone::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	SetActorTickEnabled(false);
-
-	TArray< TPair<AActor*, bool> > TrackedActorsArray;
-
-	// Save map as array, so changes won't effect the loop
-	for (const TPair<AActor*, bool>& MapPair : TrackedActors)
-	{
-		TrackedActorsArray.Add(MapPair);
-	}
-	TrackedActors.Empty();
-	
-	// Notify tracked actors
-	for (const TPair<AActor*, bool>& MapPair : TrackedActorsArray)
-	{
-		AActor* TrackedActor = MapPair.Key;
-		bool IsWithinPoly = MapPair.Value;
-		if ( IsWithinPoly && IsValid(TrackedActor) )
-		{
-			ZoneOverlapChange(TrackedActor, false);
-		}
-	}
-	
-	Super::EndPlay(EndPlayReason);
-}
-
-void APolyZone::K2_DestroyActor()
-{
-	// Delays destroy by 1 tick, if called via blueprint
-	WantsDestroyed = true;
-}
-
 void APolyZone::OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
                                      bool bFromSweep, const FHitResult& SweepResult)
 {
@@ -480,23 +510,15 @@ void APolyZone::OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* 
 	{
 		if( TrackedActors.FindRef(OtherActor) ) // Get TMap Data: bool IsWithinPolygon
 		{
-			ZoneOverlapChange(OtherActor, false); // Notify that we left via bounds (likely height)
+			PolyZoneOverlapChange(OtherActor, false); // Notify that we left via bounds (likely height)
 		}
 		TrackedActors.Remove(OtherActor);
 	}
 }
 
-// Called every frame
-void APolyZone::Tick(float DeltaTime)
+// Track actors within bounds
+void APolyZone::DoActorTracking()
 {
-	Super::Tick(DeltaTime);
-
-	if(WantsDestroyed)
-	{
-		Destroy();
-		return;
-	}
-	
 	// We cannot notify while in the TMap loop, because the notifies may cause the map to change
 	TArray<TPair<AActor*, bool>> ActorsToNotify;
 
@@ -508,24 +530,27 @@ void APolyZone::Tick(float DeltaTime)
 		AActor* TrackedActor = MapPair.Key;
 		bool IsWithinPoly = MapPair.Value;
 		if ( IsValid(TrackedActor) ) // TMap magically removes invalid actors but this is for my sanity
-		{
+			{
 			bool NewIsWithinPoly = IsActorWithinPolyZone( TrackedActor, true, true );
 			if(NewIsWithinPoly != IsWithinPoly)
 			{
 				TrackedActors[TrackedActor] = NewIsWithinPoly;
 				ActorsToNotify.Add(MapPair); // If our status has changed, we should notify the interface
 			}
-		}
+			}
 	}
 
-	// Now that we know which actors have changed, we can notify their interfaces
-	for(TPair<AActor*, bool>& ActorStatus: ActorsToNotify)
+	if( ActorTracking ) // Only notify actors if actor tracking is enabled ( this function may be called from 'get' functions )
 	{
-		ZoneOverlapChange(ActorStatus.Key, ActorStatus.Value);
+		// Now that we know which actors have changed, we can notify their interfaces
+		for(TPair<AActor*, bool>& ActorStatus: ActorsToNotify)
+		{
+			PolyZoneOverlapChange(ActorStatus.Key, ActorStatus.Value);
+		}
 	}
 }
 
-void APolyZone::ZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped)
+void APolyZone::PolyZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped)
 {
 	if( NewIsOverlapped )
 	{
