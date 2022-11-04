@@ -1,3 +1,4 @@
+![PolyZone_Icon_Plugin](https://user-images.githubusercontent.com/3581910/199876133-4314e961-db81-4160-8fcc-63235eef5b5d.png)
 # Seven47 Software -- PolyZones Plugin
 PolyZones is an Unreal Engine 5 plugin that allows you to draw overlap zones as complex polygonal shapes. These zones are useful for cases where you would need to know where an actor or point is, such as a building interior where you want to force walking.
 
@@ -10,7 +11,7 @@ To receive Enter/Exit events on an actor, you will first need to add the PolyZon
 ![Interface](https://user-images.githubusercontent.com/3581910/199860162-8b30bae5-ff91-4e17-b4e8-4d459bd584b9.png)
 
 ### Using a PolyZone child blueprint
-PolyZones have blueprint events for Enter/Exit intended to be used in children classes. It is recommended to create a child blueprint for each area type. For example, if you want a PolyZone that you can use in all building interiors, you would create "PolyZone_Interior". You could then pass configuration options such as "Force Walking" to actors that Enter/Exit this zone.
+PolyZones have blueprint events for Enter/Exit intended to be used in children classes. It is recommended to create a child blueprint for each area type. For example, if you want a PolyZone that you can use in all building interiors, you could create "PolyZone_Interior". You could then pass configuration options such as "Force Walking" to actors that Enter/Exit this zone.
 
 ![PolyZoneChild](https://user-images.githubusercontent.com/3581910/199860986-b9d8b344-c1aa-4fbd-a69a-e24a5a13353e.png)
 
