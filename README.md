@@ -14,6 +14,12 @@ PolyZones have blueprint events for Enter/Exit intended to be used in children c
 
 ![PolyZoneChild](https://user-images.githubusercontent.com/3581910/199860986-b9d8b344-c1aa-4fbd-a69a-e24a5a13353e.png)
 
+### Using a PolyZone via function calls
+There are some included functions to pull data from the PolyZones by means other than the standard Enter/Exit events. Avoid using these functions on tick if actor tracking is turned off in the PolyZone config.
+
+![Functions](https://user-images.githubusercontent.com/3581910/199863877-57856003-26b3-4a78-ae99-8153cf09c75d.png)
+
+
 
 ## License
 **Standard MIT License, please see the LICENSE file.**
