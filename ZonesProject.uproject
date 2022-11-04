@@ -20,6 +20,10 @@
 			"TargetAllowList": [
 				"Editor"
 			]
+		},
+		{
+			"Name": "PolyZones_Plugin",
+			"Enabled": true
 		}
 	],
 	"TargetPlatforms": [
