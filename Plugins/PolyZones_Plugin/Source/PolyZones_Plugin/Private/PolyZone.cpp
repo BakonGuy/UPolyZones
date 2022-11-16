@@ -6,6 +6,7 @@
 #include "PolyZone_Visualizer.h"
 #endif
 
+#include "Runtime/Launch/Resources/Version.h"
 #include "PolyZone_Interface.h"
 #include "Components/BillboardComponent.h"
 #include "Components/BoxComponent.h"
@@ -45,6 +46,12 @@ APolyZone::APolyZone()
 	ShowVisualization = true;
 	HideInPlay = true;
 
+#if ENGINE_MINOR_VERSION == 0
+	HideIsSupported = true; // Unreal 5.0
+#else
+	HideIsSupported = false; // Unreal 5.1+
+#endif
+	
 	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
 	if(PolyIcon)
 	{
