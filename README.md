@@ -2,6 +2,8 @@
 # Seven47 Software -- PolyZones Plugin
 PolyZones is an Unreal Engine 5 plugin that allows you to draw overlap zones as complex polygonal shapes. These zones are useful for cases where you would need to know where an actor or point is, such as a building interior where you want to force walking.
 
+[If you would like to support the developer, this plugin is also available via the Unreal Marketplace](https://www.unrealengine.com/marketplace/en-US/product/polyzones-plugin)
+
 ![PolyZoneStar](https://user-images.githubusercontent.com/3581910/199859090-9ba9e7b9-4eda-4219-9d57-2de6a22b71ca.png)
 
 ## Using the PolyZones
