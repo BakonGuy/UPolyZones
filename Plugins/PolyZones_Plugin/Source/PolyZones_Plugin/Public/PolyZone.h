@@ -67,14 +67,6 @@ public:	// Accessible anywhere
 	/*Draw the PolyZone walls while in editor*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
 	bool ShowVisualization;
-
-	// Set in constructor to determine engine version
-	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = "PolyZone Config")
-	bool HideIsSupported;
-	
-	/*Hides the visualization while in PIE (Note: The visualization does not exist in packaged builds, regardless of this setting)*/
-	UPROPERTY( EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config", meta = (EditCondition = "HideIsSupported", EditConditionHides) )
-	bool HideInPlay;
 	
 	UPROPERTY()
 	UBillboardComponent* PolyIcon;

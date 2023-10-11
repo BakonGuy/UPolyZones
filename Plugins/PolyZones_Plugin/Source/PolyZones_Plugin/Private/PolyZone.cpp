@@ -44,13 +44,6 @@ APolyZone::APolyZone()
 #if WITH_EDITORONLY_DATA // Editor only defaults
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 	ShowVisualization = true;
-	HideInPlay = true;
-
-#if ENGINE_MINOR_VERSION == 0
-	HideIsSupported = true; // Unreal 5.0
-#else
-	HideIsSupported = false; // Unreal 5.1+
-#endif
 	
 	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
 	if(PolyIcon)
@@ -252,7 +245,7 @@ void APolyZone::Construct_SetupGrid()
 	GridData.Empty(); // Can rebuild at runtime
 
 	int32 NumPoints = PolySpline->GetNumberOfSplinePoints();
-	UsesGrid = NumPoints >= 6;
+	UsesGrid = false; //NumPoints >= 6; // TODO Fix grid
 	if(UsesGrid)
 	{
 		// Calculate a performant cell size
@@ -308,7 +301,7 @@ void APolyZone::Construct_Visualizer()
 			APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
 			if(IsValid(Viz))
 			{
-				Viz->SetActorHiddenInGame(HideInPlay);
+				Viz->SetActorHiddenInGame(true);
 				Viz->PolygonVertices = Polygon2D;
 				Viz->PolyZoneHeight = ZoneHeight;
 				Viz->PolyColor = ZoneColor;
