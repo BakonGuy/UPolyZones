@@ -28,10 +28,10 @@ APolyZone::APolyZone()
 	CellSize = 50.0f;
 	GridCellsX = 0;
 	GridCellsY = 0;
-	CornerDirections.Add( FVector2D(-1.0f, -1.0f) ); // BL
-	CornerDirections.Add( FVector2D(1.0f, -1.0f) ); // TL
-	CornerDirections.Add( FVector2D(1.0f, 1.0f) ); // TR
-	CornerDirections.Add( FVector2D(-1.0f, 1.0f) ); // BR
+	CornerDirections.Add(FVector2D(-1.0f, -1.0f)); // BL
+	CornerDirections.Add(FVector2D(1.0f, -1.0f)); // TL
+	CornerDirections.Add(FVector2D(1.0f, 1.0f)); // TR
+	CornerDirections.Add(FVector2D(-1.0f, 1.0f)); // BR
 
 	// Initializations
 	USceneComponent* SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComp"));
@@ -41,17 +41,17 @@ APolyZone::APolyZone()
 	PolySpline = CreateDefaultSubobject<USplineComponent>("PolySpline");
 	PolySpline->SetupAttachment(RootComponent);
 
-#if WITH_EDITORONLY_DATA // Editor only defaults
+	#if WITH_EDITORONLY_DATA // Editor only defaults
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 	ShowVisualization = true;
-	
+
 	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
-	if(PolyIcon)
+	if( PolyIcon )
 	{
-		PolyIcon->SetRelativeLocation(FVector(0.0f,0.0f,50.0f));
+		PolyIcon->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f));
 		PolyIcon->SetupAttachment(RootComponent);
 	}
-#endif
+	#endif
 	SetCanBeDamaged(false);
 }
 
@@ -69,9 +69,9 @@ void APolyZone::BeginPlay()
 
 	// Reconstruct needed data
 	Construct_Bounds();
-#if WITH_EDITORONLY_DATA
+	#if WITH_EDITORONLY_DATA
 	Construct_Visualizer();
-#endif
+	#endif
 
 	// Initialize actor tracking
 	if( IsValid(BoundsOverlap) )
@@ -83,8 +83,8 @@ void APolyZone::BeginPlay()
 		// Track pre-spawned actors
 		TArray<AActor*> StartingOverlaps;
 		BoundsOverlap->GetOverlappingActors(StartingOverlaps);
-		int LastIndex = StartingOverlaps.Num()-1;
-		for (int Index = 0; Index <= LastIndex; ++Index)
+		int LastIndex = StartingOverlaps.Num() - 1;
+		for( int Index = 0; Index <= LastIndex; ++Index )
 		{
 			if( StartingOverlaps[Index]->Implements<UPolyZone_Interface>() )
 			{
@@ -98,26 +98,26 @@ void APolyZone::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	SetActorTickEnabled(false);
 
-	TArray< TPair<AActor*, bool> > TrackedActorsArray;
+	TArray<TPair<AActor*, bool>> TrackedActorsArray;
 
 	// Save map as array, so changes won't effect the loop
-	for (const TPair<AActor*, bool>& MapPair : TrackedActors)
+	for( const TPair<AActor*, bool>& MapPair : TrackedActors )
 	{
 		TrackedActorsArray.Add(MapPair);
 	}
 	TrackedActors.Empty();
-	
+
 	// Notify tracked actors
-	for (const TPair<AActor*, bool>& MapPair : TrackedActorsArray)
+	for( const TPair<AActor*, bool>& MapPair : TrackedActorsArray )
 	{
 		AActor* TrackedActor = MapPair.Key;
 		bool IsWithinPoly = MapPair.Value;
-		if ( IsWithinPoly && IsValid(TrackedActor) )
+		if( IsWithinPoly && IsValid(TrackedActor) )
 		{
 			PolyZoneOverlapChange(TrackedActor, false);
 		}
 	}
-	
+
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -132,7 +132,7 @@ void APolyZone::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if(WantsDestroyed)
+	if( WantsDestroyed )
 	{
 		Destroy();
 		return;
@@ -147,7 +147,7 @@ void APolyZone::Tick(float DeltaTime)
 // Rebuilds the PolyZone (can be run during runtime)
 void APolyZone::Build_PolyZone()
 {
-	if(PolySpline->GetNumberOfSplinePoints() < 3) // A polygon must have at least 3 points to be valid
+	if( PolySpline->GetNumberOfSplinePoints() < 3 ) // A polygon must have at least 3 points to be valid
 	{
 		// Create a default polygon
 		TArray<FVector> DefaultPoints;
@@ -156,7 +156,7 @@ void APolyZone::Build_PolyZone()
 		DefaultPoints.Add(FVector(100, 50, 0));
 		PolySpline->SetSplinePoints(DefaultPoints, ESplineCoordinateSpace::Local, true);
 	}
-	if(PolySpline->GetNumberOfSplinePoints() >= 3) // We check again because sometimes the default is overridden
+	if( PolySpline->GetNumberOfSplinePoints() >= 3 ) // We check again because sometimes the default is overridden
 	{
 		Construct_Polygon();
 		Construct_Bounds();
@@ -169,11 +169,11 @@ void APolyZone::Construct_Polygon()
 {
 	Polygon.Empty(); // Can rebuild at runtime
 	Polygon2D.Empty();
-	
+
 	// Make spline flat and ensure all points are linear
 	int LastSplineIndex = PolySpline->GetNumberOfSplinePoints() - 1;
 	double ActorHeight = GetActorLocation().Z;
-	for(int i = 0; i <= LastSplineIndex; i++)
+	for( int i = 0; i <= LastSplineIndex; i++ )
 	{
 		PolySpline->SetSplinePointType(i, ESplinePointType::Linear, false);
 		FVector SplinePoint = PolySpline->GetLocationAtSplinePoint(i, ESplineCoordinateSpace::World);
@@ -193,13 +193,13 @@ void APolyZone::Construct_Polygon()
 	Bounds_MaxX = Polygon[0].X;
 	Bounds_MinY = Polygon[0].Y;
 	Bounds_MaxY = Polygon[0].Y;
-	for ( int i = 1 ; i < LastSplineIndex+1 ; i++ )
+	for( int i = 1; i < LastSplineIndex + 1; i++ )
 	{
 		FVector q = Polygon[i];
-		Bounds_MinX = FMath::Min( q.X, Bounds_MinX );
-		Bounds_MaxX = FMath::Max( q.X, Bounds_MaxX );
-		Bounds_MinY = FMath::Min( q.Y, Bounds_MinY );
-		Bounds_MaxY = FMath::Max( q.Y, Bounds_MaxY );
+		Bounds_MinX = FMath::Min(q.X, Bounds_MinX);
+		Bounds_MaxX = FMath::Max(q.X, Bounds_MaxX);
+		Bounds_MinY = FMath::Min(q.Y, Bounds_MinY);
+		Bounds_MaxY = FMath::Max(q.Y, Bounds_MaxY);
 	}
 }
 
@@ -209,30 +209,30 @@ void APolyZone::Construct_Bounds()
 	PolyBounds = PolySpline->CalcBounds(PolySpline->GetComponentTransform());
 	UBoxComponent* NewBoundsOverlap = NewObject<UBoxComponent>(this);
 	NewBoundsOverlap->CreationMethod = EComponentCreationMethod::UserConstructionScript;
-	if(NewBoundsOverlap)
+	if( NewBoundsOverlap )
 	{
 		// Create
-		FVector OverlapExtent = FVector(PolyBounds.BoxExtent.X, PolyBounds.BoxExtent.Y, ZoneHeight*0.5f);
+		FVector OverlapExtent = FVector(PolyBounds.BoxExtent.X, PolyBounds.BoxExtent.Y, ZoneHeight * 0.5f);
 		NewBoundsOverlap->SetAbsolute(true, true, true); // Ignore relative transform
 		NewBoundsOverlap->RegisterComponent();
 		NewBoundsOverlap->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 
-#if WITH_EDITORONLY_DATA
+		#if WITH_EDITORONLY_DATA
 		// Setup Visualization
 		NewBoundsOverlap->ShapeColor = FColor(0, 255, 0);
-		NewBoundsOverlap->SetVisibility( ShowVisualization );
-		NewBoundsOverlap->SetHiddenInGame( true );
-#endif
+		NewBoundsOverlap->SetVisibility(ShowVisualization);
+		NewBoundsOverlap->SetHiddenInGame(true);
+		#endif
 
 		// Setup Shape
 		NewBoundsOverlap->SetBoxExtent(OverlapExtent);
-		NewBoundsOverlap->SetWorldLocation(PolyBounds.Origin + FVector(0,0,ZoneHeight*0.5f));
+		NewBoundsOverlap->SetWorldLocation(PolyBounds.Origin + FVector(0, 0, ZoneHeight * 0.5f));
 
 		// Setup Collision
 		NewBoundsOverlap->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		NewBoundsOverlap->SetCollisionObjectType(ZoneObjectType);
 		NewBoundsOverlap->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
-		for(ECollisionChannel ToOverlap : OverlapTypes)
+		for( ECollisionChannel ToOverlap : OverlapTypes )
 		{
 			NewBoundsOverlap->SetCollisionResponseToChannel(ToOverlap, ECollisionResponse::ECR_Overlap);
 		}
@@ -246,7 +246,7 @@ void APolyZone::Construct_SetupGrid()
 
 	int32 NumPoints = PolySpline->GetNumberOfSplinePoints();
 	UsesGrid = false; //NumPoints >= 6; // TODO Fix grid
-	if(UsesGrid)
+	if( UsesGrid )
 	{
 		// Calculate a performant cell size
 		float DesiredCellsOnLength = FMath::Min(40.0f, 2.0f * NumPoints);
@@ -254,8 +254,8 @@ void APolyZone::Construct_SetupGrid()
 		CellSize = LengthToCover / DesiredCellsOnLength;
 
 		// Find how many cells we will need to cover the polygon
-		GridCellsX = DivideNoRemainder( (PolyBounds.BoxExtent.X * 2.0f), CellSize ) + 1;
-		GridCellsY = DivideNoRemainder( (PolyBounds.BoxExtent.Y * 2.0f), CellSize ) + 1;
+		GridCellsX = DivideNoRemainder((PolyBounds.BoxExtent.X * 2.0f), CellSize) + 1;
+		GridCellsY = DivideNoRemainder((PolyBounds.BoxExtent.Y * 2.0f), CellSize) + 1;
 
 		// Center the grid over the polygon
 		double OriginX = PolyBounds.Origin.X - (GridCellsX * 0.5f * CellSize);
@@ -263,13 +263,13 @@ void APolyZone::Construct_SetupGrid()
 		GridOrigin = FVector(OriginX, OriginY, GetActorLocation().Z);
 
 		// Populate grid data
-		for (int x = 0; x < GridCellsX-1; ++x)
+		for( int x = 0; x < GridCellsX - 1; ++x )
 		{
-			for (int y = 0; y < GridCellsY-1; ++y)
+			for( int y = 0; y < GridCellsY - 1; ++y )
 			{
 				FPolyZone_GridCell NewCoord = FPolyZone_GridCell(x, y);
 				POLYZONE_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
-				if(NewCoordFlag != POLYZONE_CELL_FLAGS::Outside) // Unpopulated cells default to outside polygon, so don't add data we don't need
+				if( NewCoordFlag != POLYZONE_CELL_FLAGS::Outside ) // Unpopulated cells default to outside polygon, so don't add data we don't need
 				{
 					GridData.Add(NewCoord, NewCoordFlag);
 				}
@@ -280,26 +280,26 @@ void APolyZone::Construct_SetupGrid()
 
 void APolyZone::Construct_Visualizer()
 {
-#if WITH_EDITORONLY_DATA
-	if(ShowVisualization)
+	#if WITH_EDITORONLY_DATA
+	if( ShowVisualization )
 	{
 		UChildActorComponent* NewVisualizer = NewObject<UChildActorComponent>(this);
 		NewVisualizer->CreationMethod = EComponentCreationMethod::UserConstructionScript;
-		if(NewVisualizer)
+		if( NewVisualizer )
 		{
 			NewVisualizer->RegisterComponent();
 			NewVisualizer->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 			NewVisualizer->SetChildActorClass(APolyZone_Visualizer::StaticClass());
 		}
 		EditorVisualizer = NewVisualizer;
-		
-		if(IsValid(EditorVisualizer))
+
+		if( IsValid(EditorVisualizer) )
 		{
-			EditorVisualizer->SetWorldTransform(FTransform(FVector(0,0,GetActorLocation().Z))); // Move XY to world origin
+			EditorVisualizer->SetWorldTransform(FTransform(FVector(0, 0, GetActorLocation().Z))); // Move XY to world origin
 			EditorVisualizer->CreateChildActor();
 			AActor* VizActor = EditorVisualizer->GetChildActor();
 			APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
-			if(IsValid(Viz))
+			if( IsValid(Viz) )
 			{
 				Viz->SetActorHiddenInGame(true);
 				Viz->PolygonVertices = Polygon2D;
@@ -308,7 +308,7 @@ void APolyZone::Construct_Visualizer()
 			}
 		}
 	}
-#endif
+	#endif
 }
 
 TArray<AActor*> APolyZone::GetAllActorsWithinPolyZone()
@@ -326,10 +326,10 @@ void APolyZone::GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TAr
 	{
 		DoActorTracking(); //If actor tracking is disabled, call it once so we have our list of actors
 	}
-	
+
 	if( Class )
 	{
-		for(AActor* Actor : ActorsInPolyZone)
+		for( AActor* Actor : ActorsInPolyZone )
 		{
 			if( Actor->IsA(Class) )
 			{
@@ -342,38 +342,38 @@ void APolyZone::GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TAr
 bool APolyZone::IsActorWithinPolyZone(AActor* Actor, bool SkipHeight, bool SkipBounds)
 {
 	FVector TestPoint = Actor->GetActorLocation();
-	return IsPointWithinPolyZone( TestPoint, SkipHeight, SkipBounds );
+	return IsPointWithinPolyZone(TestPoint, SkipHeight, SkipBounds);
 }
 
 bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight, bool SkipBounds)
 {
 	// Height Check
-	if(!SkipHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin.Z, GridOrigin.Z + ZoneHeight))
+	if( !SkipHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin.Z, GridOrigin.Z + ZoneHeight) )
 	{
 		return false;
 	}
 
 	// 2D Bounds Check
-	if (!SkipBounds && TestPoint.X < Bounds_MinX || TestPoint.X > Bounds_MaxX || TestPoint.Y < Bounds_MinY || TestPoint.Y > Bounds_MaxY )
+	if( !SkipBounds && TestPoint.X < Bounds_MinX || TestPoint.X > Bounds_MaxX || TestPoint.Y < Bounds_MinY || TestPoint.Y > Bounds_MaxY )
 	{
 		return false;
 	}
 
 	// Grid check
-	if(UsesGrid)
+	if( UsesGrid )
 	{
 		POLYZONE_CELL_FLAGS CellFlag = GetFlagAtLocation(TestPoint);
-		if(CellFlag == POLYZONE_CELL_FLAGS::Outside)
+		if( CellFlag == POLYZONE_CELL_FLAGS::Outside )
 		{
 			return false;
 		}
-		if(CellFlag == POLYZONE_CELL_FLAGS::Within)
+		if( CellFlag == POLYZONE_CELL_FLAGS::Within )
 		{
 			return true;
 		}
 	}
-	
-	return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
+
+	return IsPointWithinPolygon(FVector2D(TestPoint.X, TestPoint.Y));
 }
 
 TArray<FVector> APolyZone::GetRandomPointsInPolyZone(int NumPoints, bool RandomHeight)
@@ -446,14 +446,14 @@ TArray<FVector> APolyZone::GetRandomPointsAlongPolyZoneEdges(int NumPoints, bool
 bool APolyZone::IsPointWithinPolygon(FVector2D TestPoint)
 {
 	int NumPoints = Polygon.Num();
-	
+
 	bool InsidePoly = false;
-	for ( int i = 0, j = NumPoints - 1 ; i < NumPoints ; j = i++ )
+	for( int i = 0, j = NumPoints - 1; i < NumPoints; j = i++ )
 	{
 		FVector Point_i = Polygon[i];
 		FVector Point_j = Polygon[j];
-		if ( ( Point_i.Y > TestPoint.Y ) != ( Point_j.Y > TestPoint.Y ) &&
-			 TestPoint.X < ( Point_j.X - Point_i.X ) * ( TestPoint.Y - Point_i.Y ) / ( Point_j.Y - Point_i.Y ) + Point_i.X )
+		if( (Point_i.Y > TestPoint.Y) != (Point_j.Y > TestPoint.Y) &&
+			TestPoint.X < (Point_j.X - Point_i.X) * (TestPoint.Y - Point_i.Y) / (Point_j.Y - Point_i.Y) + Point_i.X )
 		{
 			InsidePoly = !InsidePoly;
 		}
@@ -461,6 +461,7 @@ bool APolyZone::IsPointWithinPolygon(FVector2D TestPoint)
 
 	return InsidePoly;
 }
+
 // END MIT LICENSE
 
 FVector APolyZone::GetGridCellWorld(const FPolyZone_GridCell& Cell)
@@ -470,12 +471,12 @@ FVector APolyZone::GetGridCellWorld(const FPolyZone_GridCell& Cell)
 
 FVector APolyZone::GetGridCellCenterWorld(const FPolyZone_GridCell& Cell)
 {
-	return GetGridCellWorld(Cell) + FVector(CellSize*0.5f, CellSize*0.5f, 0.0f);
+	return GetGridCellWorld(Cell) + FVector(CellSize * 0.5f, CellSize * 0.5f, 0.0f);
 }
 
 FPolyZone_GridCell APolyZone::GetGridCellAtLocation(FVector Location)
 {
-	FTransform GridOriginTransform = FTransform( FVector(GridOrigin.X, GridOrigin.Y, 0.0f) );
+	FTransform GridOriginTransform = FTransform(FVector(GridOrigin.X, GridOrigin.Y, 0.0f));
 	FVector LocationOnGrid = GridOriginTransform.InverseTransformPosition(Location);
 	int32 GridX = FMath::RoundToInt32(LocationOnGrid.X / CellSize);
 	int32 GridY = FMath::RoundToInt32(LocationOnGrid.Y / CellSize);
@@ -502,22 +503,22 @@ POLYZONE_CELL_FLAGS APolyZone::TestCellAgainstPolygon(FPolyZone_GridCell Cell)
 	int Corner = -1;
 	bool Result = false;
 	bool OnPolyEdge = false;
-	for( FVector2D CornerDir : CornerDirections)
+	for( FVector2D CornerDir : CornerDirections )
 	{
 		FVector2D CellCorner;
-		CellCorner.X = CellCenterLocation_WS.X + (CellSize*0.5f) * CornerDir.X;
-		CellCorner.Y = CellCenterLocation_WS.Y + (CellSize*0.5f) * CornerDir.Y;
+		CellCorner.X = CellCenterLocation_WS.X + (CellSize * 0.5f) * CornerDir.X;
+		CellCorner.Y = CellCenterLocation_WS.Y + (CellSize * 0.5f) * CornerDir.Y;
 
 		bool CurResult = IsPointWithinPolygon(CellCorner);
 
 		Corner++;
-		if(Corner == 0) // First test
+		if( Corner == 0 ) // First test
 		{
 			Result = CurResult;
 		}
 		else
 		{
-			if(CurResult != Result)
+			if( CurResult != Result )
 			{
 				OnPolyEdge = true;
 				break;
@@ -525,11 +526,11 @@ POLYZONE_CELL_FLAGS APolyZone::TestCellAgainstPolygon(FPolyZone_GridCell Cell)
 		}
 	}
 
-	if(OnPolyEdge)
+	if( OnPolyEdge )
 	{
 		return POLYZONE_CELL_FLAGS::OnEdge;
 	}
-	if(Result)
+	if( Result )
 	{
 		return POLYZONE_CELL_FLAGS::Within;
 	}
@@ -545,7 +546,7 @@ TArray<FPolyZone_GridCell> APolyZone::GetAllGridCells()
 }
 
 void APolyZone::OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-                                     bool bFromSweep, const FHitResult& SweepResult)
+									 bool bFromSweep, const FHitResult& SweepResult)
 {
 	if( OtherActor->Implements<UPolyZone_Interface>() )
 	{
@@ -572,27 +573,27 @@ void APolyZone::DoActorTracking()
 	TArray<TPair<AActor*, bool>> ActorsToNotify;
 
 	// Check if each tracked actor is within the polyzone
-	for(const TPair<AActor*, bool>& MapPair : TrackedActors)
+	for( const TPair<AActor*, bool>& MapPair : TrackedActors )
 	{
 		if( !IsValid(this) ) { break; }
-		
+
 		AActor* TrackedActor = MapPair.Key;
 		bool IsWithinPoly = MapPair.Value;
-		if ( IsValid(TrackedActor) ) // TMap magically removes invalid actors but this is for my sanity
-			{
-			bool NewIsWithinPoly = IsActorWithinPolyZone( TrackedActor, true, true );
-			if(NewIsWithinPoly != IsWithinPoly)
+		if( IsValid(TrackedActor) ) // TMap magically removes invalid actors but this is for my sanity
+		{
+			bool NewIsWithinPoly = IsActorWithinPolyZone(TrackedActor, true, true);
+			if( NewIsWithinPoly != IsWithinPoly )
 			{
 				TrackedActors[TrackedActor] = NewIsWithinPoly;
 				ActorsToNotify.Add(MapPair); // If our status has changed, we should notify the interface
 			}
-			}
+		}
 	}
 
 	if( ActorTracking ) // Only notify actors if actor tracking is enabled ( this function may be called from 'get' functions )
 	{
 		// Now that we know which actors have changed, we can notify their interfaces
-		for(TPair<AActor*, bool>& ActorStatus: ActorsToNotify)
+		for( TPair<AActor*, bool>& ActorStatus : ActorsToNotify )
 		{
 			PolyZoneOverlapChange(ActorStatus.Key, ActorStatus.Value);
 		}
@@ -611,7 +612,7 @@ void APolyZone::PolyZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped
 		ActorsInPolyZone.Remove(TrackedActor);
 		OnExitPolyZone(TrackedActor);
 	}
-	
+
 	IPolyZone_Interface* ZoneInterface = Cast<IPolyZone_Interface>(TrackedActor);
 	if( NewIsOverlapped )
 	{

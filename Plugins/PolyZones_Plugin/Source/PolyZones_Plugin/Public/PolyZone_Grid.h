@@ -20,9 +20,11 @@ struct FPolyZone_GridCell
 		X = aX;
 		Y = aY;
 	}
+
 	FPolyZone_GridCell()
 	{
-		X = 0; Y = 0;
+		X = 0;
+		Y = 0;
 	}
 
 	FORCEINLINE bool operator==(const FPolyZone_GridCell& Src) const
@@ -49,7 +51,6 @@ struct FPolyZone_GridCell
 	{
 		return FCrc::MemCrc32(&point, sizeof(FPolyZone_GridCell));
 	}
-
 };
 
 UENUM(BlueprintType)

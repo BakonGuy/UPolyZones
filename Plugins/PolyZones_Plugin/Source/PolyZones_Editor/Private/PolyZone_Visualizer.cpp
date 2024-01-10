@@ -10,7 +10,7 @@ APolyZone_Visualizer::APolyZone_Visualizer()
 
 	PolyColor = FColor(0, 255, 0, 255);
 
-	if(IsValid(DynamicMeshComponent))
+	if( IsValid(DynamicMeshComponent) )
 	{
 		DynamicMeshComponent->SetShadowsEnabled(false);
 	}
@@ -24,17 +24,17 @@ void APolyZone_Visualizer::BeginPlay()
 
 void APolyZone_Visualizer::SetupDynamicMaterial()
 {
-	if(IsValid(DynamicMeshComponent))
+	if( IsValid(DynamicMeshComponent) )
 	{
 		FSoftObjectPath DefaultMaterialPath(TEXT("Material'/PolyZones_Plugin/PolyZoneDebugMaterial.PolyZoneDebugMaterial'"));
 		UMaterial* DefaultMaterial = Cast<UMaterial>(DefaultMaterialPath.ResolveObject()); // Try getting already loaded material
-		if ( !IsValid(DefaultMaterial) )
+		if( !IsValid(DefaultMaterial) )
 		{
 			DefaultMaterial = CastChecked<UMaterial>(DefaultMaterialPath.TryLoad()); // If not loaded already, load it
 		}
 		// Create a dynamic version so we can recolor it
-		DynamicMaterial = UMaterialInstanceDynamic::Create(DefaultMaterial, this,FName("M_CreatedInstance"));
-		DynamicMaterial->SetVectorParameterValue( FName( TEXT("Color") ), FLinearColor(PolyColor) );
+		DynamicMaterial = UMaterialInstanceDynamic::Create(DefaultMaterial, this, FName("M_CreatedInstance"));
+		DynamicMaterial->SetVectorParameterValue(FName(TEXT("Color")), FLinearColor(PolyColor));
 		DynamicMeshComponent->SetMaterial(0, DynamicMaterial);
 	}
 }
@@ -43,7 +43,7 @@ void APolyZone_Visualizer::SetupDynamicMaterial()
 
 void APolyZone_Visualizer::ExecuteRebuildGeneratedMeshIfPending()
 {
-	if (bGeneratedMeshRebuildPending)
+	if( bGeneratedMeshRebuildPending )
 	{
 		Super::ExecuteRebuildGeneratedMeshIfPending();
 		RebuildMesh(DynamicMeshComponent->GetDynamicMesh());
@@ -56,13 +56,13 @@ void APolyZone_Visualizer::ExecuteRebuildGeneratedMeshIfPending()
 
 void APolyZone_Visualizer::RebuildMesh(UDynamicMesh* TargetMesh)
 {
-	if(IsValid(TargetMesh) && PolygonVertices.Num() >= 3)
+	if( IsValid(TargetMesh) && PolygonVertices.Num() >= 3 )
 	{
 		FGeometryScriptPrimitiveOptions PrimitiveOptions;
 		PrimitiveOptions.PolygroupMode = EGeometryScriptPrimitivePolygroupMode::PerFace;
 		PrimitiveOptions.bFlipOrientation = true;
 		PrimitiveOptions.UVMode = EGeometryScriptPrimitiveUVMode::Uniform;
-		
+
 		FTransform Transform;
 
 		UGeometryScriptLibrary_MeshPrimitiveFunctions::AppendSimpleExtrudePolygon(TargetMesh, PrimitiveOptions, Transform, PolygonVertices, PolyZoneHeight, 0, false);
@@ -70,4 +70,3 @@ void APolyZone_Visualizer::RebuildMesh(UDynamicMesh* TargetMesh)
 		SetupDynamicMaterial();
 	}
 }
-

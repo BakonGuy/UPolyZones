@@ -20,7 +20,7 @@ protected:
 
 	UPROPERTY()
 	UMaterialInstanceDynamic* DynamicMaterial;
-	
+
 	void SetupDynamicMaterial();
 	void RebuildMesh(UDynamicMesh* TargetMesh);
 
@@ -33,5 +33,4 @@ public:
 
 	UPROPERTY()
 	FColor PolyColor;
-	
 };

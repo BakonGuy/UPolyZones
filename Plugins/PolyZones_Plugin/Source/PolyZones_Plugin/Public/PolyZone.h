@@ -7,7 +7,7 @@
 #include "Components/SplineComponent.h"
 #include "PolyZone.generated.h"
 
-UCLASS( hidecategories = (Input), meta = (PrioritizeCategories = "PolyZone") )
+UCLASS(hidecategories = (Input), meta = (PrioritizeCategories = "PolyZone"))
 class POLYZONES_PLUGIN_API APolyZone : public AActor
 {
 	GENERATED_BODY()
@@ -23,15 +23,15 @@ protected: // Accessible by subclasses
 	/*Called at the end of C++ construction*/
 	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
 	void PolyZoneConstructed();
-	
-public:	// Accessible anywhere
+
+public: // Accessible anywhere
 	APolyZone();
 
 	// ~~ Overrides
 	virtual void Tick(float DeltaTime) override;
 
 	// ~~ Default actor components
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	USplineComponent* PolySpline;
 
@@ -44,7 +44,7 @@ public:	// Accessible anywhere
 	 *With this disabled the PolyZone will not do anything on it's own, manual calls to the WithinPolyZone functions will be needed*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
 	bool ActorTracking;
-	
+
 	/*Color associated with this zone, can be useful for showing debug text*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
 	FColor ZoneColor;
@@ -63,18 +63,18 @@ public:	// Accessible anywhere
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
 	float ZoneHeight;
 
-#if WITH_EDITORONLY_DATA
+	#if WITH_EDITORONLY_DATA
 	/*Draw the PolyZone walls while in editor*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
 	bool ShowVisualization;
-	
+
 	UPROPERTY()
 	UBillboardComponent* PolyIcon;
 
 	UPROPERTY()
 	UChildActorComponent* EditorVisualizer;
-#endif
-	
+	#endif
+
 	// ~~ PolyZone I/O
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
@@ -82,13 +82,13 @@ public:	// Accessible anywhere
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
 	void OnExitPolyZone(AActor* ExitedActor);
-	
+
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsActorWithinPolyZone(AActor* Actor, bool SkipHeight = false, bool SkipBounds = false);
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	TArray<AActor*> GetAllActorsWithinPolyZone();
-	
+
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight = false, bool SkipBounds = false);
 
@@ -97,12 +97,12 @@ public:	// Accessible anywhere
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	TArray<FVector> GetRandomPointsAlongPolyZoneEdges(int NumPoints, bool RandomHeight);
-	
+
 	UFUNCTION(BlueprintCallable, Category = "PolyZone", meta=(DeterminesOutputType="Class", DynamicOutputParam="Actors"))
 	void GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TArray<AActor*>& Actors);
 
 	// ~~ PolyZone Grid I/O
-	
+
 	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	TArray<FPolyZone_GridCell> GetAllGridCells();
 
@@ -114,13 +114,13 @@ public:	// Accessible anywhere
 
 	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	FVector GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
-	
+
 	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	POLYZONE_CELL_FLAGS GetGridCellFlag(const FPolyZone_GridCell& Cell);
 
 	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
 	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
-	
+
 	/*Origin of the PolyZone grid in world space (Also the location of Grid 0,0)*/
 	UPROPERTY(/*BlueprintReadOnly, Category = "PolyZoneGrid"*/)
 	FVector GridOrigin;
@@ -135,7 +135,7 @@ private: // Accessible by this class only
 	static int32 DivideNoRemainder(float Dividend, float Divisor)
 	{
 		int32 Result = 0;
-		if (Divisor != 0.f)
+		if( Divisor != 0.f )
 		{
 			const float Quotient = Dividend / Divisor;
 			Result = (Quotient < 0.f ? -1 : 1) * FMath::FloorToInt(FMath::Abs(Quotient));
@@ -155,7 +155,7 @@ private: // Accessible by this class only
 	double Bounds_MinY;
 	UPROPERTY()
 	double Bounds_MaxY;
-	
+
 	UFUNCTION()
 	void OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -196,5 +196,4 @@ private: // Accessible by this class only
 
 	void DoActorTracking();
 	void PolyZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
-
 };
