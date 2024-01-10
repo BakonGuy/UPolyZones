@@ -384,7 +384,7 @@ TArray<FVector> APolyZone::GetRandomPointsInPolyZone(int NumPoints, bool RandomH
 	FVector MaxBounds = PolyBounds.Origin + PolyBounds.BoxExtent;
 
 	int Failures = 0;
-	int MaxFailures = NumPoints * 4;
+	int MaxFailures = FMath::Max(100.0f, NumPoints * 4);
 
 	while( RandomPoints.Num() < NumPoints && Failures < MaxFailures )
 	{
