@@ -32,7 +32,7 @@ public:	// Accessible anywhere
 
 	// ~~ Default actor components
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	USplineComponent* PolySpline;
 
 	UPROPERTY(Transient)
@@ -85,13 +85,19 @@ public:	// Accessible anywhere
 	
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsActorWithinPolyZone(AActor* Actor, bool SkipHeight = false, bool SkipBounds = false);
+
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
+	TArray<AActor*> GetAllActorsWithinPolyZone();
 	
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	bool IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight = false, bool SkipBounds = false);
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
-	TArray<AActor*> GetAllActorsWithinPolyZone();
+	TArray<FVector> GetRandomPointsInPolyZone(int NumPoints, bool RandomHeight);
 
+	UFUNCTION(BlueprintCallable, Category = "PolyZone")
+	TArray<FVector> GetRandomPointsAlongPolyZoneEdges(int NumPoints, bool RandomHeight);
+	
 	UFUNCTION(BlueprintCallable, Category = "PolyZone", meta=(DeterminesOutputType="Class", DynamicOutputParam="Actors"))
 	void GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TArray<AActor*>& Actors);
 

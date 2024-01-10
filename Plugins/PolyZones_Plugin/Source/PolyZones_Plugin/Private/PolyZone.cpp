@@ -376,6 +376,58 @@ bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight, bool S
 	return IsPointWithinPolygon( FVector2D(TestPoint.X, TestPoint.Y) );
 }
 
+TArray<FVector> APolyZone::GetRandomPointsInPolyZone(int NumPoints, bool RandomHeight)
+{
+	TArray<FVector> RandomPoints;
+
+	FVector MinBounds = PolyBounds.Origin - PolyBounds.BoxExtent;
+	FVector MaxBounds = PolyBounds.Origin + PolyBounds.BoxExtent;
+
+	int Failures = 0;
+	int MaxFailures = NumPoints * 4;
+
+	while( RandomPoints.Num() < NumPoints && Failures < MaxFailures )
+	{
+		float RandomX = FMath::FRandRange(MinBounds.X, MaxBounds.X);
+		float RandomY = FMath::FRandRange(MinBounds.Y, MaxBounds.Y);
+		float HeightToAdd = RandomHeight ? FMath::FRandRange(0.0f, ZoneHeight) : 0.0f;
+		float RandomZ = GetActorLocation().Z + HeightToAdd;
+
+		FVector RandomPoint(RandomX, RandomY, RandomZ);
+
+		if( IsPointWithinPolygon(FVector2D(RandomX, RandomY)) )
+		{
+			RandomPoints.Add(RandomPoint);
+		}
+		else
+		{
+			Failures++;
+		}
+	}
+
+	return RandomPoints;
+}
+
+TArray<FVector> APolyZone::GetRandomPointsAlongPolyZoneEdges(int NumPoints, bool RandomHeight)
+{
+	TArray<FVector> RandomPoints;
+	if( IsValid(PolySpline) )
+	{
+		float SplineLength = PolySpline->GetSplineLength();
+
+		for( int i = 0; i < NumPoints; ++i )
+		{
+			float HeightToAdd = RandomHeight ? FMath::FRandRange(0.0f, ZoneHeight) : 0.0f;
+			float RandomDistance = FMath::FRandRange(0.0f, SplineLength);
+			FVector DistanceAsLocation = PolySpline->GetWorldLocationAtDistanceAlongSpline(RandomDistance);
+			DistanceAsLocation.Z = GetActorLocation().Z + HeightToAdd;
+			RandomPoints.Add(DistanceAsLocation);
+		}
+	}
+
+	return RandomPoints;
+}
+
 // Copyright (c) 1970-2003, Wm. Randolph Franklin
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
