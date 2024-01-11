@@ -107,27 +107,33 @@ public: // Accessible anywhere
 
 	// ~~ PolyZone Grid I/O
 
-	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
+	UFUNCTION(BlueprintCallable, Category = "PolyZone|Grid")
 	TArray<FPolyZone_GridCell> GetAllGridCells();
 
-	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
+	UFUNCTION(BlueprintCallable, Category = "PolyZone|Grid")
 	FPolyZone_GridCell GetGridCellAtLocation(FVector Location);
 
-	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
+	UFUNCTION(BlueprintCallable, Category = "PolyZone|Grid")
 	FVector GetGridCellWorld(const FPolyZone_GridCell& Cell);
 
-	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
+	UFUNCTION(BlueprintCallable, Category = "PolyZone|Grid")
 	FVector GetGridCellCenterWorld(const FPolyZone_GridCell& Cell);
 
-	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
+	UFUNCTION(BlueprintCallable, Category = "PolyZone|Grid")
 	POLYZONE_CELL_FLAGS GetGridCellFlag(const FPolyZone_GridCell& Cell);
 
-	UFUNCTION(/*BlueprintCallable, Category = "PolyZoneGrid"*/)
+	UFUNCTION(BlueprintCallable, Category = "PolyZone|Grid")
 	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
 
 	/*Origin of the PolyZone grid in world space (Also the location of Grid 0,0)*/
-	UPROPERTY(/*BlueprintReadOnly, Category = "PolyZoneGrid"*/)
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
 	FVector GridOrigin;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "PolyZone|Grid")
+	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "PolyZone|Grid")
+	float CellSize;
 
 private: // Accessible by this class only
 	void Build_PolyZone();
@@ -135,18 +141,6 @@ private: // Accessible by this class only
 	void Construct_Bounds();
 	void Construct_SetupGrid();
 	void Construct_Visualizer();
-
-	static int32 DivideNoRemainder(float Dividend, float Divisor)
-	{
-		int32 Result = 0;
-		if( Divisor != 0.f )
-		{
-			const float Quotient = Dividend / Divisor;
-			Result = (Quotient < 0.f ? -1 : 1) * FMath::FloorToInt(FMath::Abs(Quotient));
-		}
-
-		return Result;
-	}
 
 	// ~~ Bounds
 	UPROPERTY()
@@ -169,15 +163,11 @@ private: // Accessible by this class only
 	// ~~ Grid
 	UPROPERTY()
 	bool UsesGrid;
-	UPROPERTY()
-	float CellSize;
+
 	UPROPERTY()
 	int32 GridCellsX;
 	UPROPERTY()
 	int32 GridCellsY;
-
-	UPROPERTY()
-	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
 
 	TArray<FVector2D> CornerDirections; // Multipliers to get each corner of a cell
 	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);

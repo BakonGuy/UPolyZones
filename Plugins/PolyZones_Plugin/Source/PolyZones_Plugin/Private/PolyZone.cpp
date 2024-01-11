@@ -246,33 +246,43 @@ void APolyZone::Construct_SetupGrid()
 	GridData.Empty(); // Can rebuild at runtime
 
 	int32 NumPoints = PolySpline->GetNumberOfSplinePoints();
-	UsesGrid = false; //NumPoints >= 6; // TODO Fix grid
+	UsesGrid = NumPoints >= 6;
 	if( UsesGrid )
 	{
 		// Calculate a performant cell size
-		float DesiredCellsOnLength = FMath::Min(40.0f, 2.0f * NumPoints);
-		float LengthToCover = FMath::Max(PolyBounds.BoxExtent.X * 2.0f, PolyBounds.BoxExtent.Y * 2.0f);
-		CellSize = LengthToCover / DesiredCellsOnLength;
+		float DesiredCellCount = FMath::Min(40.0f, 2.0f * NumPoints);
+		float DistanceToCover = FMath::Max(PolyBounds.BoxExtent.X * 2.0f, PolyBounds.BoxExtent.Y * 2.0f);
+		CellSize = DistanceToCover / DesiredCellCount;
+
+		FVector2D BoundsBottomLeft;
+		BoundsBottomLeft.X = PolyBounds.Origin.X - PolyBounds.BoxExtent.X;
+		BoundsBottomLeft.Y = PolyBounds.Origin.Y - PolyBounds.BoxExtent.Y;
+		FVector2D BoundsTopRight;
+		BoundsTopRight.X = PolyBounds.Origin.X + PolyBounds.BoxExtent.X;
+		BoundsTopRight.Y = PolyBounds.Origin.Y + PolyBounds.BoxExtent.Y;
+
+		// Find the cell (world grid) for the bottom left bounds, and make it our local grid origin
+		int64 NewOriginX = FMath::FloorToInt(BoundsBottomLeft.X / CellSize) * CellSize;
+		int64 NewOriginY = FMath::FloorToInt(BoundsBottomLeft.Y / CellSize) * CellSize;
+		GridOrigin = FVector(NewOriginX, NewOriginY, GetActorLocation().Z);
+
+		float DistanceX = BoundsTopRight.X - GridOrigin.X;
+		float DistanceY = BoundsTopRight.Y - GridOrigin.Y;
 
 		// Find how many cells we will need to cover the polygon
-		GridCellsX = DivideNoRemainder((PolyBounds.BoxExtent.X * 2.0f), CellSize) + 1;
-		GridCellsY = DivideNoRemainder((PolyBounds.BoxExtent.Y * 2.0f), CellSize) + 1;
-
-		// Center the grid over the polygon
-		double OriginX = PolyBounds.Origin.X - (GridCellsX * 0.5f * CellSize);
-		double OriginY = PolyBounds.Origin.Y - (GridCellsY * 0.5f * CellSize);
-		GridOrigin = FVector(OriginX, OriginY, GetActorLocation().Z);
+		GridCellsX = FMath::CeilToInt(DistanceX / CellSize);
+		GridCellsY = FMath::CeilToInt(DistanceY / CellSize);
 
 		// Populate grid data
-		for( int x = 0; x < GridCellsX - 1; ++x )
+		for( int32 GridX = 0; GridX < GridCellsX; GridX++ )
 		{
-			for( int y = 0; y < GridCellsY - 1; ++y )
+			for( int32 GridY = 0; GridY < GridCellsY; GridY++ )
 			{
-				FPolyZone_GridCell NewCoord = FPolyZone_GridCell(x, y);
-				POLYZONE_CELL_FLAGS NewCoordFlag = TestCellAgainstPolygon(NewCoord);
-				if( NewCoordFlag != POLYZONE_CELL_FLAGS::Outside ) // Unpopulated cells default to outside polygon, so don't add data we don't need
+				FPolyZone_GridCell NewCell = FPolyZone_GridCell(GridX, GridY);
+				POLYZONE_CELL_FLAGS FlagForNewCell = TestCellAgainstPolygon(NewCell);
+				if( FlagForNewCell != POLYZONE_CELL_FLAGS::Outside ) // Unpopulated cells default to outside polygon, so don't add data we don't need
 				{
-					GridData.Add(NewCoord, NewCoordFlag);
+					GridData.Add(NewCell, FlagForNewCell);
 				}
 			}
 		}
@@ -484,8 +494,8 @@ FPolyZone_GridCell APolyZone::GetGridCellAtLocation(FVector Location)
 {
 	FTransform GridOriginTransform = FTransform(FVector(GridOrigin.X, GridOrigin.Y, 0.0f));
 	FVector LocationOnGrid = GridOriginTransform.InverseTransformPosition(Location);
-	int32 GridX = FMath::RoundToInt32(LocationOnGrid.X / CellSize);
-	int32 GridY = FMath::RoundToInt32(LocationOnGrid.Y / CellSize);
+	int32 GridX = FMath::FloorToInt(LocationOnGrid.X / CellSize);
+	int32 GridY = FMath::FloorToInt(LocationOnGrid.Y / CellSize);
 	return FPolyZone_GridCell(GridX, GridY);
 }
 
