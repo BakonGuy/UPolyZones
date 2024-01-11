@@ -68,6 +68,10 @@ public: // Accessible anywhere
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
 	bool ShowVisualization;
 
+	/*Hides the visualization while playing in editor (Note: The visualization is editor only and does not exist in packaged builds, regardless of this setting)*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config", meta = (EditCondition = "HideIsSupported", EditConditionHides))
+	bool HideInPlay;
+
 	UPROPERTY()
 	UBillboardComponent* PolyIcon;
 

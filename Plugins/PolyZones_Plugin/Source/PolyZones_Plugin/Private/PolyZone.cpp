@@ -44,6 +44,7 @@ APolyZone::APolyZone()
 	#if WITH_EDITORONLY_DATA // Editor only defaults
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
 	ShowVisualization = true;
+	HideInPlay = true;
 
 	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
 	if( PolyIcon )
@@ -301,10 +302,15 @@ void APolyZone::Construct_Visualizer()
 			APolyZone_Visualizer* Viz = Cast<APolyZone_Visualizer>(VizActor);
 			if( IsValid(Viz) )
 			{
-				Viz->SetActorHiddenInGame(true);
+				Viz->SetActorHiddenInGame(HideInPlay);
 				Viz->PolygonVertices = Polygon2D;
 				Viz->PolyZoneHeight = ZoneHeight;
 				Viz->PolyColor = ZoneColor;
+
+				if( GetWorld() && GetWorld()->IsGameWorld() )
+				{
+					Viz->RebuildVisualizer(); // We have to manually trigger the build, or it will not show in play
+				}
 			}
 		}
 	}

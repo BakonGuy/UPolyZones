@@ -14,6 +14,8 @@ class POLYZONES_EDITOR_API APolyZone_Visualizer : public AGeneratedDynamicMeshAc
 public:
 	APolyZone_Visualizer(); // Constructor
 
+	void RebuildVisualizer();
+
 protected:
 	virtual void ExecuteRebuildGeneratedMeshIfPending() override;
 	virtual void BeginPlay() override;

@@ -5,6 +5,7 @@
 
 APolyZone_Visualizer::APolyZone_Visualizer()
 {
+	DynamicMaterial = nullptr;
 	bListedInSceneOutliner = false; // Hide from outliner
 	PrimaryActorTick.bCanEverTick = false; // Tick
 
@@ -52,6 +53,11 @@ void APolyZone_Visualizer::ExecuteRebuildGeneratedMeshIfPending()
 	{
 		Super::ExecuteRebuildGeneratedMeshIfPending();
 	}
+}
+
+void APolyZone_Visualizer::RebuildVisualizer()
+{
+	RebuildMesh(DynamicMeshComponent->GetDynamicMesh());
 }
 
 void APolyZone_Visualizer::RebuildMesh(UDynamicMesh* TargetMesh)
