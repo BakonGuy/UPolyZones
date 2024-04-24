@@ -295,9 +295,9 @@ void APolyZone::Construct_Visualizer()
 	if( ShowVisualization )
 	{
 		UChildActorComponent* NewVisualizer = NewObject<UChildActorComponent>(this);
-		NewVisualizer->CreationMethod = EComponentCreationMethod::UserConstructionScript;
 		if( NewVisualizer )
 		{
+			NewVisualizer->CreationMethod = EComponentCreationMethod::UserConstructionScript;
 			NewVisualizer->RegisterComponent();
 			NewVisualizer->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
 			NewVisualizer->SetChildActorClass(APolyZone_Visualizer::StaticClass());
