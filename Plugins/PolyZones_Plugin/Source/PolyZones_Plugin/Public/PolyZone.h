@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "PolyZone_Grid.h"
 #include "Components/SplineComponent.h"
+// ReSharper disable once CppUnusedIncludeDirective
+#include "Components/ShapeComponent.h" // Needed for compiling in Game Mode
 #include "PolyZone.generated.h"
 
 UCLASS(hidecategories = (Input), meta = (PrioritizeCategories = "PolyZone"))
@@ -32,7 +34,7 @@ public: // Accessible anywhere
 
 	// ~~ Default actor components
 
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone")
 	USplineComponent* PolySpline;
 
 	UPROPERTY(Transient)
@@ -69,7 +71,7 @@ public: // Accessible anywhere
 	bool ShowVisualization;
 
 	/*Hides the visualization while playing in editor (Note: The visualization is editor only and does not exist in packaged builds, regardless of this setting)*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config", meta = (EditCondition = "HideIsSupported", EditConditionHides))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
 	bool HideInPlay;
 
 	UPROPERTY()
@@ -129,10 +131,10 @@ public: // Accessible anywhere
 	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
 	FVector GridOrigin;
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "PolyZone|Grid")
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
 	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
 
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = "PolyZone|Grid")
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
 	float CellSize;
 
 private: // Accessible by this class only
