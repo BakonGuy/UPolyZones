@@ -1,4 +1,4 @@
-// Copyright 2022 Seven47 Software. All Rights Reserved.
+// Copyright 2022-2026 Overtorque Creations LLC. All Rights Reserved.
 
 #include "PolyZone.h"
 
@@ -10,24 +10,17 @@
 #include "PolyZone_Interface.h"
 #include "Components/BillboardComponent.h"
 #include "Components/BoxComponent.h"
+#include "DrawDebugHelpers.h"
+#include "Engine/World.h"
 
 // Sets default values
 APolyZone::APolyZone()
 {
 	PrimaryActorTick.bCanEverTick = true; // Tick
 
-	// Config Defaults
-	ActorTracking = true;
-	ZoneColor = FColor(0, 255, 0, 255);
-	ZoneObjectType = ECollisionChannel::ECC_WorldDynamic;
 	OverlapTypes.Add(ECollisionChannel::ECC_Pawn);
-	ZoneHeight = 250.0f;
 
 	// Grid defaults
-	UsesGrid = false;
-	CellSize = 50.0f;
-	GridCellsX = 0;
-	GridCellsY = 0;
 	CornerDirections.Add(FVector2D(-1.0f, -1.0f)); // BL
 	CornerDirections.Add(FVector2D(1.0f, -1.0f)); // TL
 	CornerDirections.Add(FVector2D(1.0f, 1.0f)); // TR
@@ -43,8 +36,6 @@ APolyZone::APolyZone()
 
 	#if WITH_EDITORONLY_DATA // Editor only defaults
 	bRunConstructionScriptOnDrag = false; // Allow spline editing without the lag
-	ShowVisualization = true;
-	HideInPlay = true;
 
 	PolyIcon = CreateEditorOnlyDefaultSubobject<UBillboardComponent>("PolyIcon");
 	if( PolyIcon )
@@ -142,6 +133,11 @@ void APolyZone::Tick(float DeltaTime)
 	if( ActorTracking )
 	{
 		DoActorTracking();
+	}
+
+	if( bDebugGrid )
+	{
+		DrawDebugGrid();
 	}
 }
 
@@ -606,7 +602,7 @@ void APolyZone::DoActorTracking()
 		}
 	}
 
-	if( ActorTracking ) // Only notify actors if actor tracking is enabled ( this function may be called from 'get' functions )
+	if( ActorTracking ) // Only notify actors if actor tracking is enabled (this function might have been called from 'get' functions)
 	{
 		// Now that we know which actors have changed, we can notify their interfaces
 		for( TPair<AActor*, bool>& ActorStatus : ActorsToNotify )

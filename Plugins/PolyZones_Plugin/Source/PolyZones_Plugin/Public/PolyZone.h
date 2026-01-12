@@ -1,4 +1,4 @@
-// Copyright 2022 Seven47 Software. All Rights Reserved.
+// Copyright 2022-2026 Overtorque Creations LLC. All Rights Reserved.
 
 #pragma once
 
@@ -9,79 +9,22 @@
 #include "Components/ShapeComponent.h" // Needed for compiling in Game Mode
 #include "PolyZone.generated.h"
 
-UCLASS(hidecategories = (Input), meta = (PrioritizeCategories = "PolyZone"))
+UCLASS(HideCategories=(Input), meta=(PrioritizeCategories="PolyZone"))
 class POLYZONES_PLUGIN_API APolyZone : public AActor
 {
 	GENERATED_BODY()
 
-protected: // Accessible by subclasses
-	virtual void OnConstruction(const FTransform& Transform) override; // Construction Script
-	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-	virtual void K2_DestroyActor() override;
-	bool WantsDestroyed = false; // A blueprint called destroy on us
-
-	/*Called at the end of C++ construction*/
-	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
-	void PolyZoneConstructed();
-
-public: // Accessible anywhere
+public:
 	APolyZone();
 
-	// ~~ Overrides
+	// ==================== ENGINE OVERRIDES ====================
+	virtual void OnConstruction(const FTransform& Transform) override; // Construction Script
+	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void K2_DestroyActor() override;
 
-	// ~~ Default actor components
-
-	UPROPERTY(BlueprintReadOnly, Category = "PolyZone")
-	USplineComponent* PolySpline;
-
-	UPROPERTY(Transient)
-	UShapeComponent* BoundsOverlap;
-
-	// ~~ PolyZone Config
-
-	/*Track and notify actors that enter/exit the PolyZone
-	 *With this disabled the PolyZone will not do anything on it's own, manual calls to the WithinPolyZone functions will be needed*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
-	bool ActorTracking;
-
-	/*Color associated with this zone, can be useful for showing debug text*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
-	FColor ZoneColor;
-
-	/*Object type to use as the PolyZone collision*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
-	TEnumAsByte<ECollisionChannel> ZoneObjectType;
-
-	/*Object types that will generate overlap events
-	 *actors must have a collision of one of these types to be considered within the PolyZone*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
-	TArray<TEnumAsByte<ECollisionChannel>> OverlapTypes;
-
-	/*The height of the PolyZone's overlap bounds
-	 *If you need an infinite height, you will need to call the WithinPolyZone functions manually with "SkipHeight" enabled*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
-	float ZoneHeight;
-
-	#if WITH_EDITORONLY_DATA
-	/*Draw the PolyZone walls while in editor*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
-	bool ShowVisualization;
-
-	/*Hides the visualization while playing in editor (Note: The visualization is editor only and does not exist in packaged builds, regardless of this setting)*/
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
-	bool HideInPlay;
-
-	UPROPERTY()
-	UBillboardComponent* PolyIcon;
-
-	UPROPERTY()
-	UChildActorComponent* EditorVisualizer;
-	#endif
-
-	// ~~ PolyZone I/O
+	// ==================== INPUTS & OUTPUTS ====================
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
 	void OnEnterPolyZone(AActor* EnteredActor);
@@ -107,8 +50,6 @@ public: // Accessible anywhere
 	UFUNCTION(BlueprintCallable, Category = "PolyZone", meta=(DeterminesOutputType="Class", DynamicOutputParam="Actors"))
 	void GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TArray<AActor*>& Actors);
 
-	// ~~ PolyZone Grid I/O
-
 	UFUNCTION(BlueprintCallable, Category = "PolyZone|Grid")
 	TArray<FPolyZone_GridCell> GetAllGridCells();
 
@@ -127,55 +68,112 @@ public: // Accessible anywhere
 	UFUNCTION(BlueprintCallable, Category = "PolyZone|Grid")
 	POLYZONE_CELL_FLAGS GetFlagAtLocation(FVector Location);
 
+protected:
+	
+	/*Called at the end of C++ construction*/
+	UFUNCTION(BlueprintImplementableEvent, Category = "PolyZone")
+	void PolyZoneConstructed();
+
+	// ==================== CONFIGURATION ====================
+public:
+	// -- Default actor components --
+
+	UPROPERTY(BlueprintReadOnly, Category = "PolyZone")
+	USplineComponent* PolySpline = nullptr;
+
+	UPROPERTY(Transient)
+	UShapeComponent* BoundsOverlap = nullptr;
+
+	// -- PolyZone Config --
+
+	/*Track and notify actors that enter/exit the PolyZone
+	 *With this disabled the PolyZone will not do anything on it's own, manual calls to the WithinPolyZone functions will be needed*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
+	bool ActorTracking = true;
+
+	/*Color associated with this zone, can be useful for showing debug text*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
+	FColor ZoneColor = FColor(0, 255, 0, 255);
+
+	/*Object type to use as the PolyZone collision*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
+	TEnumAsByte<ECollisionChannel> ZoneObjectType = ECollisionChannel::ECC_WorldDynamic;
+
+	/*Object types that will generate overlap events
+	 *actors must have a collision of one of these types to be considered within the PolyZone*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
+	TArray<TEnumAsByte<ECollisionChannel>> OverlapTypes;
+
+	/*The height of the PolyZone's overlap bounds
+	 *If you need an infinite height, you will need to call the WithinPolyZone functions manually with "SkipHeight" enabled*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
+	float ZoneHeight = 250.0f;
+	
+	#if WITH_EDITORONLY_DATA
+	/*Draw the PolyZone walls while in editor*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
+	bool ShowVisualization = true;
+
+	/*Hides the visualization while playing in editor (Note: The visualization is editor only and does not exist in packaged builds, regardless of this setting)*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
+	bool HideInPlay = true;
+
+	UPROPERTY()
+	UBillboardComponent* PolyIcon = nullptr;
+
+	UPROPERTY()
+	UChildActorComponent* EditorVisualizer = nullptr;
+	#endif
+
+	// ==================== FUNCTIONALITY ====================
+public:
+	// -- PolyZone Grid --
+
 	/*Origin of the PolyZone grid in world space (Also the location of Grid 0,0)*/
 	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
-	FVector GridOrigin;
+	FVector GridOrigin = FVector::ZeroVector;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
-	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData;
+	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData = {};
 
 	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
-	float CellSize;
-
-private: // Accessible by this class only
+	float CellSize = 50.0f;
+	
+private:
 	void Build_PolyZone();
 	void Construct_Polygon();
 	void Construct_Bounds();
 	void Construct_SetupGrid();
 	void Construct_Visualizer();
+	void DoActorTracking();
+	void PolyZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
+	bool IsPointWithinPolygon(FVector2D TestPoint);
+	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);
+	
+	bool WantsDestroyed = false; // A blueprint called destroy on us
+	
+	// -- Bounds --
+	UPROPERTY()
+	FBoxSphereBounds PolyBounds = FBoxSphereBounds();
+	UPROPERTY()
+	double Bounds_MinX = 0.0;
+	UPROPERTY()
+	double Bounds_MaxX = 0.0;
+	UPROPERTY()
+	double Bounds_MinY = 0.0;
+	UPROPERTY()
+	double Bounds_MaxY = 0.0;
 
-	// ~~ Bounds
+	// -- Grid --
 	UPROPERTY()
-	FBoxSphereBounds PolyBounds;
-	UPROPERTY()
-	double Bounds_MinX;
-	UPROPERTY()
-	double Bounds_MaxX;
-	UPROPERTY()
-	double Bounds_MinY;
-	UPROPERTY()
-	double Bounds_MaxY;
-
-	UFUNCTION()
-	void OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UFUNCTION()
-	void OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-
-	// ~~ Grid
-	UPROPERTY()
-	bool UsesGrid;
+	bool UsesGrid = false;
 
 	UPROPERTY()
-	int32 GridCellsX;
+	int32 GridCellsX = 0;
 	UPROPERTY()
-	int32 GridCellsY;
+	int32 GridCellsY = 0;
 
 	TArray<FVector2D> CornerDirections; // Multipliers to get each corner of a cell
-	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);
-
-	// ~~ Polygon
-	bool IsPointWithinPolygon(FVector2D TestPoint);
 
 	UPROPERTY()
 	TArray<FVector> Polygon;
@@ -183,13 +181,16 @@ private: // Accessible by this class only
 	UPROPERTY()
 	TArray<FVector2D> Polygon2D;
 
-	// ~~ Actor Tracking (Actors within box bounds)
+	// -- Actor Tracking (Actors within box bounds) --
 	UPROPERTY()
-	TMap<AActor*, bool> TrackedActors; // Map of all actors within the box bounds, and if they are within the PolyZone
+	TMap<AActor*, bool> TrackedActors = {}; // Map of all actors within the box bounds, and if they are within the PolyZone
 
 	UPROPERTY()
 	TArray<AActor*> ActorsInPolyZone; // All tracked actors currently within the PolyZone
+	
+	UFUNCTION()
+	void OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
-	void DoActorTracking();
-	void PolyZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
+	UFUNCTION()
+	void OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };

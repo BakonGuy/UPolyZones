@@ -1,4 +1,4 @@
-// Copyright 2022 Seven47 Software. All Rights Reserved.
+// Copyright 2022-2026 Overtorque Creations LLC. All Rights Reserved.
 
 #pragma once
 
