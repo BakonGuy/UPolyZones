@@ -108,6 +108,10 @@ public:
 	 *If you need an infinite height, you will need to call the WithinPolyZone functions manually with "SkipHeight" enabled*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config")
 	float ZoneHeight = 250.0f;
+
+	/*Draw grid cell debug boxes in the world*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "PolyZone Config", AdvancedDisplay)
+	bool bDebugGrid = false;
 	
 	#if WITH_EDITORONLY_DATA
 	/*Draw the PolyZone walls while in editor*/
@@ -148,37 +152,31 @@ private:
 	void DoActorTracking();
 	void PolyZoneOverlapChange(AActor* TrackedActor, bool NewIsOverlapped);
 	bool IsPointWithinPolygon(FVector2D TestPoint);
+	static bool IsPointInAABB_2D(const FVector2D& Point, const FVector2D& Min, const FVector2D& Max);
+	static float Cross2D(const FVector2D& A, const FVector2D& B, const FVector2D& C);
+	static bool IsOnSegment2D(const FVector2D& A, const FVector2D& B, const FVector2D& P);
+	static bool SegmentsIntersect2D(const FVector2D& A, const FVector2D& B, const FVector2D& C, const FVector2D& D);
 	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);
+	void DrawDebugGrid();
 	
 	bool WantsDestroyed = false; // A blueprint called destroy on us
 	
 	// -- Bounds --
-	UPROPERTY()
 	FBoxSphereBounds PolyBounds = FBoxSphereBounds();
-	UPROPERTY()
 	double Bounds_MinX = 0.0;
-	UPROPERTY()
 	double Bounds_MaxX = 0.0;
-	UPROPERTY()
 	double Bounds_MinY = 0.0;
-	UPROPERTY()
 	double Bounds_MaxY = 0.0;
 
 	// -- Grid --
-	UPROPERTY()
 	bool UsesGrid = false;
-
-	UPROPERTY()
 	int32 GridCellsX = 0;
-	UPROPERTY()
 	int32 GridCellsY = 0;
 
 	TArray<FVector2D> CornerDirections; // Multipliers to get each corner of a cell
 
-	UPROPERTY()
+	// -- Polygon --
 	TArray<FVector> Polygon;
-
-	UPROPERTY()
 	TArray<FVector2D> Polygon2D;
 
 	// -- Actor Tracking (Actors within box bounds) --
@@ -187,10 +185,9 @@ private:
 
 	UPROPERTY()
 	TArray<AActor*> ActorsInPolyZone; // All tracked actors currently within the PolyZone
-	
+
 	UFUNCTION()
 	void OnBeginBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
 	UFUNCTION()
 	void OnEndBoundsOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };
