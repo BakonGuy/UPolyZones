@@ -263,6 +263,9 @@ void APolyZone::Construct_SetupGrid()
 		GridCellsX = FMath::CeilToInt(DistanceX / CellSize);
 		GridCellsY = FMath::CeilToInt(DistanceY / CellSize);
 
+		const int32 TotalCells = GridCellsX * GridCellsY;
+		GridData.Init(POLYZONE_CELL_FLAGS::Outside, TotalCells);
+
 		// Populate grid data
 		for( int32 GridX = 0; GridX < GridCellsX; GridX++ )
 		{
@@ -270,9 +273,10 @@ void APolyZone::Construct_SetupGrid()
 			{
 				FPolyZone_GridCell NewCell = FPolyZone_GridCell(GridX, GridY);
 				POLYZONE_CELL_FLAGS FlagForNewCell = TestCellAgainstPolygon(NewCell);
-				if( FlagForNewCell != POLYZONE_CELL_FLAGS::Outside ) // Unpopulated cells default to outside polygon, so don't add data we don't need
+				const int32 CellIndex = GetGridCellIndex(NewCell);
+				if( CellIndex != INDEX_NONE )
 				{
-					GridData.Add(NewCell, FlagForNewCell);
+					GridData[CellIndex] = FlagForNewCell;
 				}
 			}
 		}
@@ -345,13 +349,13 @@ void APolyZone::GetAllActorsOfClassWithinPolyZone(TSubclassOf<AActor> Class, TAr
 	}
 }
 
-bool APolyZone::IsActorWithinPolyZone(AActor* Actor, bool SkipHeight, bool SkipBounds)
+bool APolyZone::IsActorWithinPolyZone(AActor* Actor, bool SkipHeight)
 {
 	if( !IsValid(Actor) ) return false;
-	return IsPointWithinPolyZone(Actor->GetActorLocation(), SkipHeight, SkipBounds);
+	return IsPointWithinPolyZone(Actor->GetActorLocation(), SkipHeight);
 }
 
-bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight, bool SkipBounds)
+bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight)
 {
 	// Height Check
 	if( !SkipHeight && !FMath::IsWithinInclusive(TestPoint.Z, GridOrigin.Z, GridOrigin.Z + ZoneHeight) )
@@ -360,7 +364,7 @@ bool APolyZone::IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight, bool S
 	}
 
 	// 2D Bounds Check
-	if( !SkipBounds && TestPoint.X < Bounds_MinX || TestPoint.X > Bounds_MaxX || TestPoint.Y < Bounds_MinY || TestPoint.Y > Bounds_MaxY )
+	if( TestPoint.X < Bounds_MinX || TestPoint.X > Bounds_MaxX || TestPoint.Y < Bounds_MinY || TestPoint.Y > Bounds_MaxY )
 	{
 		return false;
 	}
@@ -514,9 +518,25 @@ FPolyZone_GridCell APolyZone::GetGridCellAtLocation(FVector Location)
 	return FPolyZone_GridCell(GridX, GridY);
 }
 
+int32 APolyZone::GetGridCellIndex(const FPolyZone_GridCell& Cell) const
+{
+	if( Cell.X < 0 || Cell.Y < 0 || Cell.X >= GridCellsX || Cell.Y >= GridCellsY )
+	{
+		return INDEX_NONE;
+	}
+
+	return Cell.X + (Cell.Y * GridCellsX);
+}
+
 POLYZONE_CELL_FLAGS APolyZone::GetGridCellFlag(const FPolyZone_GridCell& Cell)
 {
-	return GridData.FindRef(Cell); // Default is outside flag, if not found
+	const int32 CellIndex = GetGridCellIndex(Cell);
+	if( CellIndex == INDEX_NONE || !GridData.IsValidIndex(CellIndex) )
+	{
+		return POLYZONE_CELL_FLAGS::Outside;
+	}
+
+	return GridData[CellIndex];
 }
 
 POLYZONE_CELL_FLAGS APolyZone::GetFlagAtLocation(FVector Location)
@@ -600,7 +620,24 @@ POLYZONE_CELL_FLAGS APolyZone::TestCellAgainstPolygon(FPolyZone_GridCell Cell)
 TArray<FPolyZone_GridCell> APolyZone::GetAllGridCells()
 {
 	TArray<FPolyZone_GridCell> Coords;
-	GridData.GenerateKeyArray(Coords);
+	if( GridCellsX <= 0 || GridCellsY <= 0 )
+	{
+		return Coords;
+	}
+
+	const int32 NumCells = GridData.Num();
+	Coords.Reserve(NumCells);
+	for( int32 Index = 0; Index < NumCells; ++Index )
+	{
+		if( GridData[Index] == POLYZONE_CELL_FLAGS::Outside )
+		{
+			continue;
+		}
+
+		const int32 GridX = Index % GridCellsX;
+		const int32 GridY = Index / GridCellsX;
+		Coords.Add(FPolyZone_GridCell(GridX, GridY));
+	}
 	return Coords;
 }
 
@@ -640,7 +677,7 @@ void APolyZone::DoActorTracking()
 		bool IsWithinPoly = MapPair.Value;
 		if( IsValid(TrackedActor) ) // TMap magically removes invalid actors but this is for my sanity
 		{
-			bool NewIsWithinPoly = IsActorWithinPolyZone(TrackedActor, true, true);
+			bool NewIsWithinPoly = IsActorWithinPolyZone(TrackedActor, true);
 			if( NewIsWithinPoly != IsWithinPoly )
 			{
 				TrackedActors[TrackedActor] = NewIsWithinPoly;

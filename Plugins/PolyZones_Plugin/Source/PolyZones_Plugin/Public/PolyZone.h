@@ -33,13 +33,13 @@ public:
 	void OnExitPolyZone(AActor* ExitedActor);
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
-	bool IsActorWithinPolyZone(AActor* Actor, bool SkipHeight = false, bool SkipBounds = false);
+	bool IsActorWithinPolyZone(AActor* Actor, bool SkipHeight = false);
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	TArray<AActor*> GetAllActorsWithinPolyZone();
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
-	bool IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight = false, bool SkipBounds = false);
+	bool IsPointWithinPolyZone(FVector TestPoint, bool SkipHeight = false);
 
 	UFUNCTION(BlueprintCallable, Category = "PolyZone")
 	TArray<FVector> GetRandomPointsInPolyZone(int NumPoints, bool RandomHeight);
@@ -138,7 +138,7 @@ public:
 	FVector GridOrigin = FVector::ZeroVector;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
-	TMap<FPolyZone_GridCell, POLYZONE_CELL_FLAGS> GridData = {};
+	TArray<POLYZONE_CELL_FLAGS> GridData;
 
 	UPROPERTY(BlueprintReadOnly, Category = "PolyZone|Grid")
 	float CellSize = 50.0f;
@@ -158,6 +158,7 @@ private:
 	static bool SegmentsIntersect2D(const FVector2D& A, const FVector2D& B, const FVector2D& C, const FVector2D& D);
 	POLYZONE_CELL_FLAGS TestCellAgainstPolygon(FPolyZone_GridCell Cell);
 	void DrawDebugGrid();
+	int32 GetGridCellIndex(const FPolyZone_GridCell& Cell) const;
 	
 	bool WantsDestroyed = false; // A blueprint called destroy on us
 	
